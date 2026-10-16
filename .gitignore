@@ -1,0 +1,66 @@
+# macOS
+.DS_Store
+*.swp
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+.netrc
+
+# CocoaPods (not used, but defensively excluded)
+Pods/
+*.xcworkspace/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/source/
+fastlane/test_output/
+
+# Two-repo sync mirror — never commit the public clone
+.public-mirror/
+
+# Secrets — never commit
+secrets/
+*.env
+*.env.local
+.env.*
+*.p12
+*.mobileprovision
+*.cer
+
+# Editor
+.vscode/
+.idea/
+*.iml
+
+# Agent scratch, including the git worktrees agents check out under it. These
+# are working copies of this repo; committing one would nest a checkout inside
+# itself.
+.claude/
+
+# Coverage / profiling
+*.gcno
+*.gcda
+coverage/
+*.profraw
+*.profdata
+
+# Internal artifacts that the public mirror should never see live alongside
+# code (kept in-tree but ignored in public sync via the script's blocklist)
+docs/internal/agent-runs/
+
+# The directory the docs publish workflow compiles into. A CI artefact keyed by
+# commit sha, rebuilt from the tree every run and never worth committing. This
+# file is on the public mirror's allowlist, so the line appears there too.
+.hexdocs-bundle/

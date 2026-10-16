@@ -1,0 +1,30 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "error.stab",
+    "Description": "Asymmetric pre-spike then main spike — stings without feeling cheap."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.000,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.95 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.40 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.015,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 1.00 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 1.00 }
+        ]
+      }
+    }
+  ]
+}

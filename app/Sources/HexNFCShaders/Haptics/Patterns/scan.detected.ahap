@@ -1,0 +1,52 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "scan.detected",
+    "Description": "Thump-into-bloom: heavy transient kicks off a swelling continuous followed by a tail click."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.0,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.95 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.85 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.05,
+        "EventType": "HapticContinuous",
+        "EventDuration": 0.35,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.55 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.30 }
+        ]
+      }
+    },
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.05,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.00, "ParameterValue": -0.65 },
+          { "Time": 0.20, "ParameterValue": 0.20 },
+          { "Time": 0.35, "ParameterValue": 0.00 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.42,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.55 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.65 }
+        ]
+      }
+    }
+  ]
+}

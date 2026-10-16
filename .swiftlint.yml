@@ -1,0 +1,118 @@
+included:
+  - app/Sources
+  - app/Tests
+
+excluded:
+  - app/.build
+  - .public-mirror
+  # Vendored byte for byte from hexpro-dev/hex-promo; see
+  # app/Sources/HexPromoKit/PROVENANCE.md. Under --strict its force-unwrap and
+  # its import order fail the job, and silencing either would fork upstream's
+  # file and turn the next re-sync into a merge. The hash manifest in that
+  # PROVENANCE.md is what guards the copy instead.
+  - app/Sources/HexPromoKit
+
+disabled_rules:
+  - trailing_comma          # SwiftFormat owns trailing commas
+  - todo                    # we allow TODO comments during dev
+  # SwiftFormat owns brace placement. Its wrapMultilineStatementBraces, which
+  # .swiftformat enables on purpose, puts the brace of a wrapped condition on
+  # its own line; opening_brace pulls it back up. With both on, `swiftlint
+  # --fix` and `swiftformat` each undo the other and the two never reach a
+  # fixed point, so CI fails whichever ran last.
+  - opening_brace
+  # SwiftFormat's --maxwidth 120 already wraps everything that can be wrapped.
+  # What is left over when this rule is on is 150 lines that are one string
+  # literal, one URL or one datasheet reference, none of which SwiftFormat will
+  # break and none of which read better broken by hand. This used to sit here
+  # alongside a line_length: block setting 120/160, which SwiftLint warns about
+  # (a config for a disabled rule) and which never ran.
+  - line_length
+
+analyzer_rules:
+  # Only produced by `swiftlint analyze`; SwiftLint warns when it is listed
+  # under opt_in_rules, where plain `swiftlint lint` can never run it.
+  - unused_import
+
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - first_where
+  - force_unwrapping
+  - implicit_return
+  - last_where
+  - sorted_imports
+  - vertical_whitespace_between_cases
+  - yoda_condition
+
+# The size and shape rules below are all set above what this repo's largest
+# real file needs, rather than at a round number, because the things that trip
+# them are structural rather than sloppy. A chip simulator is one switch over
+# an opcode map; the datasheet is checked against it by reading it top to
+# bottom, and splitting it across files is what would make that hard. Same for
+# the exhaustive per-opcode suites and the HexNFCTestKit plans. Raise a limit
+# here only for that reason, and say which file forced it.
+
+# Largest today: CoreNFCSession.swift at 1613, HexNFCAppTests.swift at 1252.
+file_length:
+  warning: 1700
+  error: 2200
+
+# Largest today: HexNFCAppTests.swift at 809, CoreNFCSession.swift at 702.
+type_body_length:
+  warning: 850
+  error: 1100
+
+# Longest today: Type2Plans.swift's plan builder at 239 lines. A test plan is a
+# flat list of steps; wrapping halves of it in helpers hides the sequence.
+function_body_length:
+  warning: 250
+  error: 400
+
+# Highest today: NTAG21xSimulator's command dispatch at 46. That number is the
+# count of opcodes the chip answers, not tangled control flow.
+cyclomatic_complexity:
+  warning: 50
+  error: 70
+
+# Highest today: SuicaSimulator's block-record builder at 9 — a FeliCa service
+# record's fields, in wire order.
+function_parameter_count:
+  warning: 9
+  error: 12
+
+# The shader bridge passes a four-stop gradient as one tuple, and the EC point
+# routines pass (x, y, z) triples that exist for one line before being consumed.
+large_tuple:
+  warning: 4
+  error: 6
+
+identifier_name:
+  # Single letters, deliberately. Crypto, elliptic-curve and protocol code
+  # names its variables after the datasheet or the RFC: `s` is the nonce in
+  # ICAO Doc 9303 Part 11, `k` the key, `p` the field prime. Renaming them to
+  # satisfy a length rule is what would break the line-by-line check against
+  # the spec, so the length floor goes rather than the names.
+  min_length: 1
+  # `mifareUltralightEV1_48` and `imC0_128` carry a byte count or a test-vector
+  # index that runs into the preceding word without the separator.
+  allowed_symbols: ["_"]
+
+# `ID` and `T2` are the whole name of the thing in both cases. Underscore as
+# for identifier_name: MifareUltralightEV1_48Simulator.
+type_name:
+  min_length: 2
+  allowed_symbols: ["_"]
+
+nesting:
+  type_level:
+    warning: 3
+
+# force_unwrapping stays on everywhere, tests included. Scoping it to Sources
+# was the obvious move and does not work: per-rule `excluded` is not a thing
+# for this rule, and a nested app/Tests/.swiftlint.yml is ignored whenever
+# --config names a file, which CI does. It turned out not to be worth wanting.
+# Every unwrap it flagged in the test targets had a fix that reads better than
+# the unwrap did: `ChipCatalog.require` names the missing chip instead of
+# trapping on a bare `!`, and the ICAO vector parsers say in a comment why they
+# are fatal on purpose.

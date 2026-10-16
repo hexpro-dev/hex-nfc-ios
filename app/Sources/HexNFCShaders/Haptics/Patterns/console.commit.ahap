@@ -1,0 +1,20 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "console.commit",
+    "Description": "Single sharp transient when a command is committed in the APDU console."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.00,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.60 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.95 }
+        ]
+      }
+    }
+  ]
+}

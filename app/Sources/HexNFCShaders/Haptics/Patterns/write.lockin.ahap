@@ -1,0 +1,73 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "write.lockin",
+    "Description": "Write burst — a hard launch thump, a rolling swell as the ring races outward, an edge-hit accent, then a flowing swell that fades with the rim glow. Tracks the hexWriteBurst visual."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.000,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 1.00 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.80 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.020,
+        "EventType": "HapticContinuous",
+        "EventDuration": 0.420,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.55 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.45 }
+        ]
+      }
+    },
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.020,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.00, "ParameterValue": 0.20 },
+          { "Time": 0.10, "ParameterValue": 0.10 },
+          { "Time": 0.42, "ParameterValue": -0.30 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.440,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.85 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.60 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.460,
+        "EventType": "HapticContinuous",
+        "EventDuration": 0.550,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.32 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.50 }
+        ]
+      }
+    },
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.460,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.00, "ParameterValue": 0.10 },
+          { "Time": 0.55, "ParameterValue": -0.32 }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.nfc.readersession.felica.systemcodes</key>
+	<array>
+		<string>0003</string>
+	</array>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A0000002471001</string>
+	</array>
+	<!-- No ITSAppUsesNonExemptEncryption here, deliberately. The app does use
+	     non-exempt encryption: the Brainpool curve arithmetic and PACE mapping
+	     under HexNFCKit/Passport/EC are ours, because CryptoKit ships only the
+	     NIST curves and no raw point arithmetic. So the honest value would be
+	     true, and false would be a misdeclaration.
+
+	     But true is only half a declaration. Apple pairs it with
+	     ITSEncryptionExportComplianceCode, and the two together exist to skip
+	     the export compliance questions on every upload. The code is issued
+	     only when compliance documentation is approved, and this app owes none:
+	     every algorithm is published (RFC 5639, ICAO 9303 Part 11, BSI
+	     TR-03110, NXP AN12196), so no CCATS, and France is out of App
+	     Availability at 1.0, so no French declaration. No documentation means
+	     no code, and true without the code fails ingest with a 409, "The export
+	     compliance key value [] ... doesn't match", which is App Store Connect
+	     looking for the partner key.
+
+	     Omitting the key is the supported way to say "ask me each time". The
+	     questions are then answered per build in App Store Connect, and the
+	     answers to give are written down in docs/internal/export-compliance.md.
+	     Do not add either key back without a code in hand. -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>IBMPlexMono-Regular.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>nfc</string>
+	</array>
+</dict>
+</plist>

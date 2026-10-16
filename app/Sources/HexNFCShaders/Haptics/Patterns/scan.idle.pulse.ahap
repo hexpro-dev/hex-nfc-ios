@@ -1,0 +1,32 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "scan.idle.pulse",
+    "Description": "Subtle 'listening' rumble while ScanSheet polls for a tag."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.0,
+        "EventType": "HapticContinuous",
+        "EventDuration": 1.1,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.18 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.30 }
+        ]
+      }
+    },
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.0,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.00, "ParameterValue": -0.20 },
+          { "Time": 0.55, "ParameterValue": 0.30 },
+          { "Time": 1.10, "ParameterValue": -0.20 }
+        ]
+      }
+    }
+  ]
+}

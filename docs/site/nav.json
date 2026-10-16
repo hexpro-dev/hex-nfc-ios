@@ -1,0 +1,171 @@
+{
+	"$schema": "../../hex-docs/kit/schema/nav-1.json",
+	"nav": 1,
+	"items": [
+		{
+			"doc": "index"
+		},
+		{
+			"doc": "guide/index"
+		},
+		{
+			"doc": "guide/quick-start"
+		},
+		{
+			"group": "read-tags",
+			"label": {
+				"en": "Read tags",
+				"zh": "读取标签",
+				"ar": "قراءة البطاقات",
+				"es": "Leer etiquetas",
+				"ja": "タグを読む",
+				"fr": "Lire des tags",
+				"pt-BR": "Ler etiquetas"
+			},
+			"items": [
+				{
+					"doc": "guide/scan-a-tag"
+				},
+				{
+					"doc": "guide/transit-cards"
+				},
+				{
+					"doc": "guide/passports"
+				},
+				{
+					"doc": "guide/scan-history"
+				}
+			]
+		},
+		{
+			"group": "write-tags",
+			"label": {
+				"en": "Write tags",
+				"zh": "写入标签",
+				"ar": "كتابة البطاقات",
+				"es": "Escribir etiquetas",
+				"ja": "タグに書き込む",
+				"fr": "Écrire des tags",
+				"pt-BR": "Gravar etiquetas"
+			},
+			"items": [
+				{
+					"doc": "guide/write-a-link"
+				},
+				{
+					"doc": "guide/edit-records"
+				},
+				{
+					"doc": "guide/presets"
+				},
+				{
+					"doc": "guide/record-types"
+				}
+			]
+		},
+		{
+			"group": "protect-tags",
+			"label": {
+				"en": "Protect tags",
+				"zh": "保护标签",
+				"ar": "حماية البطاقات",
+				"es": "Proteger etiquetas",
+				"ja": "タグを保護する",
+				"fr": "Protéger des tags",
+				"pt-BR": "Proteger etiquetas"
+			},
+			"items": [
+				{
+					"doc": "guide/tag-protection"
+				},
+				{
+					"doc": "guide/protect-a-tag"
+				},
+				{
+					"doc": "guide/remove-password"
+				},
+				{
+					"doc": "guide/attempt-limit"
+				}
+			]
+		},
+		{
+			"group": "tag-tools",
+			"label": {
+				"en": "Tag tools",
+				"zh": "标签工具",
+				"ar": "أدوات البطاقات",
+				"es": "Herramientas",
+				"ja": "タグツール",
+				"fr": "Outils",
+				"pt-BR": "Ferramentas"
+			},
+			"items": [
+				{
+					"doc": "guide/erase-or-format"
+				},
+				{
+					"doc": "guide/permanent-lock"
+				},
+				{
+					"doc": "guide/memory-dump"
+				},
+				{
+					"doc": "guide/advanced-console"
+				}
+			]
+		},
+		{
+			"group": "reference",
+			"label": {
+				"en": "Reference",
+				"zh": "参考",
+				"ar": "المرجع",
+				"es": "Referencia",
+				"ja": "リファレンス",
+				"fr": "Référence",
+				"pt-BR": "Referência"
+			},
+			"items": [
+				{
+					"doc": "guide/tags-that-work"
+				},
+				{
+					"doc": "guide/settings"
+				},
+				{
+					"doc": "guide/privacy"
+				}
+			]
+		},
+		{
+			"group": "help",
+			"label": {
+				"en": "Help",
+				"zh": "帮助",
+				"ar": "المساعدة",
+				"es": "Ayuda",
+				"ja": "ヘルプ",
+				"fr": "Aide",
+				"pt-BR": "Ajuda"
+			},
+			"items": [
+				{
+					"doc": "guide/troubleshooting"
+				},
+				{
+					"doc": "guide/faq"
+				}
+			]
+		},
+		{
+			"doc": "developer/index"
+		},
+		{
+			"doc": "developer/architecture"
+		},
+		{
+			"doc": "developer/chip-support-matrix"
+		}
+	]
+}

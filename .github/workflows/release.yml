@@ -1,0 +1,60 @@
+name: Release
+
+# Manual only. A version tag is cut once that version is live on the App
+# Store, and by then App Store Connect takes no more builds for it, so an
+# upload fired by the tag could only fail. Dispatch this to send a build of
+# the chosen ref to TestFlight.
+on:
+  workflow_dispatch:
+
+# Secrets this workflow needs:
+#   ASC_API_KEY_ID / ASC_API_KEY_ISSUER_ID / ASC_API_KEY_CONTENT
+#       App Store Connect API key. CONTENT is the whole .p8 file, newlines and
+#       BEGIN/END lines included. The Fastfile passes it through in memory, so
+#       no private key is ever written to the runner's disk.
+#   MATCH_GIT_URL / MATCH_PASSWORD / MATCH_GIT_BASIC_AUTHORIZATION
+#       The encrypted signing repo, its passphrase, and the base64 credentials
+#       to clone it.
+
+jobs:
+  testflight:
+    name: Build, sign, upload to TestFlight
+    runs-on: macos-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: .github/scripts/select-xcode.sh
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install fastlane
+        run: gem install fastlane -NV
+
+      # One lane does signing, build numbering, archive and upload, so the
+      # sequence is defined in the Fastfile and reproducible from a laptop
+      # rather than assembled out of separate workflow steps that only exist
+      # here. Lanes run from the repo root; the Xcode project is under app/.
+      - name: Build and upload to TestFlight
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_API_KEY_CONTENT: ${{ secrets.ASC_API_KEY_CONTENT }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        run: fastlane beta
+
+      # A GitHub Release hangs off a tag, so this only runs when the workflow
+      # was dispatched on one.
+      - name: Attach IPA to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/HexNFC.ipa
+          generate_release_notes: true

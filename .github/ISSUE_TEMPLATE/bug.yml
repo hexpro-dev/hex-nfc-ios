@@ -1,0 +1,35 @@
+name: Bug report
+description: Something is broken or misbehaving
+labels: [bug]
+body:
+  - type: input
+    id: device
+    attributes:
+      label: Device & iOS version
+      placeholder: "iPhone 15 Pro, iOS 18.0"
+    validations:
+      required: true
+  - type: input
+    id: chip
+    attributes:
+      label: Tag chip (if relevant)
+      placeholder: "NTAG215, MIFARE Ultralight EV1, NTAG424 DNA, …"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open the app  2. Tap Scan  3. …"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic payload
+      description: Long-press the in-app error and tap "Copy diagnostics". Paste here.
+      render: text

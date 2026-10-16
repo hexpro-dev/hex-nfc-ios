@@ -1,0 +1,14 @@
+# Signing assets live in a separate private repo, encrypted by match.
+# MATCH_GIT_URL and MATCH_PASSWORD are set from CI secrets; locally they come
+# from your shell. Nothing here may hardcode the repo or the passphrase.
+git_url(ENV.fetch("MATCH_GIT_URL"))
+storage_mode("git")
+
+type("appstore")
+app_identifier(["pro.hex.nfc"])
+
+# Read-only by default so a stray run can never mint, revoke or rotate a
+# certificate. Provisioning changes are deliberate acts: run
+# `bundle exec fastlane match appstore` from a laptop, with readonly off, when
+# an entitlement genuinely changed.
+readonly(true)

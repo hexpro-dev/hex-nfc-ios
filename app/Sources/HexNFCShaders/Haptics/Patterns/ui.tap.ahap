@@ -1,0 +1,20 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "ui.tap",
+    "Description": "A single light, crisp tick — the press of a button, tile, or navigation control."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.00,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.50 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.75 }
+        ]
+      }
+    }
+  ]
+}

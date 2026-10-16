@@ -1,0 +1,178 @@
+{
+	"$schema": "../../hex-docs/kit/schema/docs-1.json",
+	"docs": 1,
+	"project": "hex-nfc",
+	"productName": "Hex NFC",
+	"repo": "hexpro-dev/hex-nfc",
+	"defaultAudience": "both",
+	"headingIds": "slug",
+	"sections": [
+		{
+			"id": "guide",
+			"kind": "guide"
+		},
+		{
+			"id": "developer",
+			"kind": "reference"
+		}
+	],
+	"i18n": {
+		"locales": [
+			"en"
+		],
+		"sourceLocale": "en",
+		"parity": "graceful"
+	},
+	"budgets": {
+		"titleMax": 70,
+		"descriptionMax": 160,
+		"pageBytesMax": 524288,
+		"codeFenceBytesMax": 204800,
+		"tableRowsMax": 500,
+		"nestingDepthMax": 32,
+		"assetBytesMax": 2097152,
+		"bundleBytesMax": 67108864
+	},
+	"code": {
+		"languages": [
+			"text"
+		]
+	},
+	"toc": {
+		"enabled": true,
+		"maxDepth": 3,
+		"minHeadings": 3
+	},
+	"lint": {
+		"extends": "house",
+		"maxDisables": 0,
+		"technicalTerms": [
+			"Organization",
+			"NDEF",
+			"NTAG213",
+			"NTAG215",
+			"NTAG216",
+			"NTAG424 DNA",
+			"MIFARE Ultralight C",
+			"MIFARE Ultralight EV1",
+			"ICODE SLIX2"
+		]
+	},
+	"taxonomy": {
+		"tags": [
+			"architecture",
+			"chips",
+			"security",
+			"scanning",
+			"writing",
+			"protection",
+			"library",
+			"settings",
+			"privacy",
+			"troubleshooting"
+		]
+	},
+	"glossary": [
+		{
+			"kind": "do-not-translate",
+			"term": "NDEF",
+			"note": "The data format an NFC tag carries. It is printed on packaging and typed into a search box, so it stays in Latin letters in every locale."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "NTAG213",
+			"note": "A part number. It is printed on the chip and typed into a search box."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "NTAG424 DNA",
+			"note": "A part number, spelled as the app spells it on the tag info card."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "MIFARE Ultralight C",
+			"note": "A part number, spelled as the app spells it on the tag info card."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "ICODE SLIX2",
+			"note": "A part number, spelled as the app spells it on the tag info card."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "FeliCa",
+			"note": "Sony's tag technology, and the word printed on the cards the transit reader supports."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "Suica",
+			"note": "A Japanese transit card brand. It is a name, not a noun to translate."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "PASMO",
+			"note": "A Japanese transit card brand. It is a name, not a noun to translate."
+		},
+		{
+			"kind": "do-not-translate",
+			"term": "UID",
+			"note": "The tag's serial number, shown as UID on the tag info card and typed back to confirm a dangerous action."
+		},
+		{
+			"kind": "translate",
+			"term": "tag",
+			"translations": {
+				"en": "tag",
+				"zh": "标签",
+				"ar": "بطاقة",
+				"es": "etiqueta",
+				"ja": "タグ",
+				"fr": "tag",
+				"pt-BR": "etiqueta"
+			},
+			"note": "The object the reader holds against the iPhone. Spellings are the app's own, from Localizable.xcstrings."
+		},
+		{
+			"kind": "translate",
+			"term": "record",
+			"translations": {
+				"en": "record",
+				"zh": "记录",
+				"ar": "سجل",
+				"es": "registro",
+				"ja": "レコード",
+				"fr": "enregistrement",
+				"pt-BR": "registro"
+			},
+			"note": "One entry in what a tag holds. Spellings are the app's own, from the Add record screen."
+		},
+		{
+			"kind": "translate",
+			"term": "preset",
+			"translations": {
+				"en": "preset",
+				"zh": "预设",
+				"ar": "قالب",
+				"es": "preajuste",
+				"ja": "プリセット",
+				"fr": "préréglage",
+				"pt-BR": "preajuste"
+			},
+			"note": "A saved set of records the reader can write again. Spellings are the app's own, from the Library screen."
+		},
+		{
+			"kind": "translate",
+			"term": "password",
+			"translations": {
+				"en": "password",
+				"zh": "密码",
+				"ar": "كلمة المرور",
+				"es": "contraseña",
+				"ja": "パスワード",
+				"fr": "mot de passe",
+				"pt-BR": "senha"
+			},
+			"note": "The secret that gates a protected tag. Spellings are the app's own."
+		}
+	]
+}

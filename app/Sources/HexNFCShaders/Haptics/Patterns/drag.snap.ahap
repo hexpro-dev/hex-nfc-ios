@@ -1,0 +1,20 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "drag.snap",
+    "Description": "Soft transient that lands when a record drag-reorder commits."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.00,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.45 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.50 }
+        ]
+      }
+    }
+  ]
+}

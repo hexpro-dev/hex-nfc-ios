@@ -1,0 +1,51 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "console.pulse",
+    "Description": "Command-run pulse — a hard double thump with a short decaying swell, tracking the rainbow border pulse around the console log."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.000,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 1.00 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.70 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.045,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.70 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.90 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.020,
+        "EventType": "HapticContinuous",
+        "EventDuration": 0.300,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.45 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.55 }
+        ]
+      }
+    },
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.020,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.00, "ParameterValue": 0.15 },
+          { "Time": 0.30, "ParameterValue": -0.40 }
+        ]
+      }
+    }
+  ]
+}

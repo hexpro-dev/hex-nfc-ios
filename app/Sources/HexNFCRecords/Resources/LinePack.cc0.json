@@ -1,0 +1,74 @@
+{
+  "_meta" : {
+    "data_license" : "CC0-1.0 (public domain)",
+    "description" : "Suica-family saibane line code → line name mappings.",
+    "provenance" : "Line names: field taps + Wikidata (CC0) + community contributions (CC0). See docs/internal/station-pack-provenance.md.",
+    "schema" : "lines[]: { line, area?, name, name_romaji, operator, verified, source }",
+    "verification_status" : "verified=true means tap/primary confirmed. Used as a partial fallback when the exact station code is unmapped."
+  },
+  "lines" : [
+    {
+      "area" : 0,
+      "line" : 1,
+      "name" : "JR Tokaido Main",
+      "name_romaji" : "JR Tokaido Main",
+      "operator" : "JR East",
+      "source" : "tap",
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 2,
+      "name" : "JR Tohoku Main",
+      "name_romaji" : "JR Tohoku Main",
+      "operator" : "JR East",
+      "source" : "tap",
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 227,
+      "name" : "Ginza Line",
+      "name_romaji" : "Ginza Line",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 229,
+      "name" : "Marunouchi Line",
+      "name_romaji" : "Marunouchi Line",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 230,
+      "name" : "Hanzomon Line",
+      "name_romaji" : "Hanzomon Line",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 241,
+      "name" : "Toei Shinjuku Line",
+      "name_romaji" : "Toei Shinjuku Line",
+      "operator" : "Toei",
+      "source" : "tap",
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 250,
+      "name" : "Tokyo Monorail",
+      "name_romaji" : "Tokyo Monorail",
+      "operator" : "Tokyo Monorail",
+      "source" : "tap",
+      "verified" : true
+    }
+  ]
+}

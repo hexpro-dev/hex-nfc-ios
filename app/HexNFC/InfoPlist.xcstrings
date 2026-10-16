@@ -1,0 +1,124 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Bundle display name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hex NFC"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "HexNFC"
+          }
+        }
+      }
+    },
+    "NFCReaderUsageDescription" : {
+      "comment" : "Privacy - NFC Scan Usage Description",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يقرأ Hex NFC بطاقات NFC ويكتب عليها فقط عندما تلمس إحداها. ولا يغادر محتوى البطاقة جهازك إلا إذا اخترت إرسال اسم محطة."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC reads and writes NFC tags only when you tap one. Tag contents stay on your device unless you choose to send a station name."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC lee y escribe etiquetas NFC solo cuando acercas una. El contenido de la etiqueta permanece en tu dispositivo salvo que decidas enviar el nombre de una estación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC lit et écrit les tags NFC uniquement lorsque vous en approchez un. Le contenu du tag reste sur votre appareil, sauf si vous choisissez d'envoyer un nom de station."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC は、あなたがタグをかざしたときにのみ NFC タグの読み書きを行います。タグの内容は、駅名を送信することを選んだ場合を除き、端末の外に出ることはありません。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hex NFC lê e grava etiquetas NFC apenas quando você encosta uma. O conteúdo da etiqueta permanece no seu dispositivo, a menos que você opte por enviar o nome de uma estação."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC 仅在你贴近标签时才读写 NFC 标签。标签内容不会离开本设备，除非你选择发送站点名称。"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Privacy - Camera Usage Description",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يستخدم Hex NFC الكاميرا لمسح رموز QR التي يمكنك تحويلها إلى سجلات NFC. وتُعالَج الصور داخل الجهاز."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC uses the camera to scan QR codes you can convert into NFC records. Frames are processed on-device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC usa la cámara para escanear códigos QR que puedes convertir en registros NFC. Las imágenes se procesan en el dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC utilise la caméra pour scanner des codes QR que vous pouvez convertir en enregistrements NFC. Les images sont traitées sur l'appareil."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC は、NFC レコードに変換できる QR コードを読み取るためにカメラを使用します。映像は端末内で処理されます。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hex NFC usa a câmera para ler códigos QR que você pode converter em registros NFC. As imagens são processadas no próprio dispositivo."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hex NFC 使用相机扫描可转换为 NFC 记录的二维码。画面在设备本地处理。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,6 @@
+app_identifier("pro.hex.nfc")
+team_id("6VJNNBLSVN")
+
+# No apple_id on purpose. Every lane authenticates with an App Store Connect
+# API key (see the Fastfile), which works without an Apple ID, without a
+# session cookie, and without a 2FA prompt on a CI runner.

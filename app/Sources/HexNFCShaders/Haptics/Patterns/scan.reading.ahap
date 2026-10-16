@@ -1,0 +1,70 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "scan.reading",
+    "Description": "Two opening transients then a steady tick train signalling data is streaming off the tag."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.00,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.60 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.80 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.06,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.60 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.80 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.15,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.35 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.55 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.24,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.35 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.55 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.33,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.35 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.55 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.42,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.35 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.55 }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,404 @@
+{
+  "_meta" : {
+    "data_license" : "CC0-1.0 (public domain)",
+    "description" : "Suica-family (FeliCa system 0x0003) saibane line/station code → station name mappings.",
+    "provenance" : "Names: Wikidata (CC0) + field taps + community contributions (CC0). Saibane codes: community-triangulated facts + tap verification, never copied verbatim from any denno.net-lineage / GPL source. See docs/internal/station-pack-provenance.md.",
+    "schema" : "stations[]: { line, station, area?, name, name_romaji, operator, verified, source }",
+    "verification_status" : "Entries with verified=false are triangulated and shown with an 'unconfirmed' indicator; verified=true means tap/primary confirmed."
+  },
+  "stations" : [
+    {
+      "area" : 0,
+      "line" : 1,
+      "name" : "東京",
+      "name_romaji" : "Tokyo",
+      "operator" : "JR East",
+      "source" : "Wikidata",
+      "station" : 1,
+      "verified" : false
+    },
+    {
+      "line" : 1,
+      "name" : "浜松町",
+      "name_romaji" : "Hamamatsucho",
+      "operator" : "JR East",
+      "source" : "tap",
+      "station" : 4,
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 1,
+      "name" : "新宿",
+      "name_romaji" : "Shinjuku",
+      "operator" : "JR East",
+      "source" : "Wikidata",
+      "station" : 8,
+      "verified" : false
+    },
+    {
+      "area" : 0,
+      "line" : 1,
+      "name" : "渋谷",
+      "name_romaji" : "Shibuya",
+      "operator" : "JR East",
+      "source" : "Wikidata",
+      "station" : 12,
+      "verified" : false
+    },
+    {
+      "area" : 0,
+      "line" : 1,
+      "name" : "品川",
+      "name_romaji" : "Shinagawa",
+      "operator" : "JR East",
+      "source" : "Wikidata",
+      "station" : 22,
+      "verified" : false
+    },
+    {
+      "area" : 0,
+      "line" : 1,
+      "name" : "大阪",
+      "name_romaji" : "Osaka",
+      "operator" : "JR West",
+      "source" : "contributor",
+      "station" : 232,
+      "verified" : true
+    },
+    {
+      "line" : 2,
+      "name" : "神田",
+      "name_romaji" : "Kanda",
+      "operator" : "JR East",
+      "source" : "tap",
+      "station" : 2,
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 12,
+      "name" : "天満",
+      "name_romaji" : "Temma",
+      "operator" : "JR West",
+      "source" : "contributor",
+      "station" : 2,
+      "verified" : true
+    },
+    {
+      "area" : 0,
+      "line" : 92,
+      "name" : "ユニバーサルシティ",
+      "name_romaji" : "Universal City",
+      "operator" : "JR West",
+      "source" : "contributor",
+      "station" : 3,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 129,
+      "name" : "梅田",
+      "name_romaji" : "Umeda",
+      "operator" : "Osaka Metro",
+      "source" : "contributor",
+      "station" : 28,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 129,
+      "name" : "淀屋橋",
+      "name_romaji" : "Yodoyabashi",
+      "operator" : "Osaka Metro",
+      "source" : "contributor",
+      "station" : 31,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 130,
+      "name" : "谷町四丁目",
+      "name_romaji" : "Tanimachi 4-chome",
+      "operator" : "Osaka Metro",
+      "source" : "contributor",
+      "station" : 36,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 133,
+      "name" : "日本橋",
+      "name_romaji" : "Nippombashi",
+      "operator" : "Osaka Metro",
+      "source" : "contributor",
+      "station" : 37,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 134,
+      "name" : "扇町",
+      "name_romaji" : "Ogimachi",
+      "operator" : "Osaka Metro",
+      "source" : "contributor",
+      "station" : 28,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 134,
+      "name" : "北浜",
+      "name_romaji" : "Kitahama",
+      "operator" : "Osaka Metro",
+      "source" : "contributor",
+      "station" : 32,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 138,
+      "name" : "国際会館",
+      "name_romaji" : "Kokusaikaikan",
+      "operator" : "Kyoto Municipal Subway",
+      "source" : "contributor",
+      "station" : 147,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 138,
+      "name" : "四条",
+      "name_romaji" : "Shijo",
+      "operator" : "Kyoto Municipal Subway",
+      "source" : "contributor",
+      "station" : 161,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 138,
+      "name" : "京都",
+      "name_romaji" : "Kyoto",
+      "operator" : "Kyoto Municipal Subway",
+      "source" : "contributor",
+      "station" : 165,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 139,
+      "name" : "東山",
+      "name_romaji" : "Higashiyama",
+      "operator" : "Kyoto Municipal Subway",
+      "source" : "contributor",
+      "station" : 165,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 139,
+      "name" : "太秦天神川",
+      "name_romaji" : "Uzumasa Tenjingawa",
+      "operator" : "Kyoto Municipal Subway",
+      "source" : "contributor",
+      "station" : 176,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 159,
+      "name" : "西院",
+      "name_romaji" : "Saiin",
+      "operator" : "Hankyu",
+      "source" : "contributor",
+      "station" : 49,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 159,
+      "name" : "烏丸",
+      "name_romaji" : "Karasuma",
+      "operator" : "Hankyu",
+      "source" : "contributor",
+      "station" : 53,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 171,
+      "name" : "大阪空港",
+      "name_romaji" : "Osaka Airport",
+      "operator" : "Osaka Monorail",
+      "source" : "contributor",
+      "station" : 1,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 171,
+      "name" : "千里中央",
+      "name_romaji" : "Senri-chuo",
+      "operator" : "Osaka Monorail",
+      "source" : "contributor",
+      "station" : 9,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 222,
+      "name" : "千里中央",
+      "name_romaji" : "Senri-chuo",
+      "operator" : "Kita-Osaka Kyuko",
+      "source" : "contributor",
+      "station" : 5,
+      "verified" : true
+    },
+    {
+      "line" : 227,
+      "name" : "浅草",
+      "name_romaji" : "Asakusa",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 44,
+      "verified" : true
+    },
+    {
+      "line" : 227,
+      "name" : "末広町",
+      "name_romaji" : "Suehirocho",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 49,
+      "verified" : true
+    },
+    {
+      "line" : 227,
+      "name" : "神田",
+      "name_romaji" : "Kanda",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 50,
+      "verified" : true
+    },
+    {
+      "line" : 227,
+      "name" : "銀座",
+      "name_romaji" : "Ginza",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 54,
+      "verified" : true
+    },
+    {
+      "line" : 227,
+      "name" : "新橋",
+      "name_romaji" : "Shimbashi",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 55,
+      "verified" : true
+    },
+    {
+      "line" : 227,
+      "name" : "渋谷",
+      "name_romaji" : "Shibuya",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 62,
+      "verified" : true
+    },
+    {
+      "line" : 229,
+      "name" : "淡路町",
+      "name_romaji" : "Awajicho",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 41,
+      "verified" : true
+    },
+    {
+      "line" : 229,
+      "name" : "大手町",
+      "name_romaji" : "Otemachi",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 42,
+      "verified" : true
+    },
+    {
+      "line" : 229,
+      "name" : "新宿",
+      "name_romaji" : "Shinjuku",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 52,
+      "verified" : true
+    },
+    {
+      "line" : 230,
+      "name" : "渋谷",
+      "name_romaji" : "Shibuya",
+      "operator" : "Tokyo Metro",
+      "source" : "tap",
+      "station" : 33,
+      "verified" : true
+    },
+    {
+      "area" : 160,
+      "line" : 232,
+      "name" : "近鉄奈良",
+      "name_romaji" : "Kintetsu-Nara",
+      "operator" : "Kintetsu",
+      "source" : "contributor",
+      "station" : 31,
+      "verified" : true
+    },
+    {
+      "line" : 241,
+      "name" : "新宿",
+      "name_romaji" : "Shinjuku",
+      "operator" : "Toei",
+      "source" : "tap",
+      "station" : 1,
+      "verified" : true
+    },
+    {
+      "line" : 241,
+      "name" : "新宿三丁目",
+      "name_romaji" : "Shinjuku-sanchome",
+      "operator" : "Toei",
+      "source" : "tap",
+      "station" : 2,
+      "verified" : true
+    },
+    {
+      "line" : 241,
+      "name" : "小川町",
+      "name_romaji" : "Ogawamachi",
+      "operator" : "Toei",
+      "source" : "tap",
+      "station" : 7,
+      "verified" : true
+    },
+    {
+      "line" : 250,
+      "name" : "モノレール浜松町",
+      "name_romaji" : "Monorail Hamamatsucho",
+      "operator" : "Tokyo Monorail",
+      "source" : "tap",
+      "station" : 1,
+      "verified" : true
+    },
+    {
+      "line" : 250,
+      "name" : "羽田空港国際線ビル",
+      "name_romaji" : "Haneda Airport T3",
+      "operator" : "Tokyo Monorail",
+      "source" : "tap",
+      "station" : 10,
+      "verified" : true
+    }
+  ]
+}

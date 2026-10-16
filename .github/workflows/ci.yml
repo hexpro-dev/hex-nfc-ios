@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_DIR: app
+
+jobs:
+  lint:
+    name: Lint & format
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      - name: Install SwiftFormat
+        run: brew install swiftformat
+      - name: SwiftLint
+        working-directory: ${{ env.APP_DIR }}
+        run: swiftlint --strict --config ../.swiftlint.yml
+      - name: SwiftFormat (lint mode)
+        working-directory: ${{ env.APP_DIR }}
+        run: swiftformat --lint --config ../.swiftformat .
+
+  guards:
+    name: Source-shape guards
+    # Deliberately depends on nothing, for the same reason build-app does not:
+    # whether someone reintroduced a parallel credential implementation is not
+    # downstream of whether the imports are sorted, and a job that only runs
+    # after lint is a job that stops running the moment lint drifts. It is also
+    # not a step inside lint, because steps run in order and a SwiftLint failure
+    # would skip it, which is precisely the coupling the comment on build-app
+    # was written to remove.
+    #
+    # ubuntu, not macos: this is bash and awk over the source tree, it takes
+    # well under a second, and nothing here needs Xcode or a Swift toolchain.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shipped-frames guard
+        run: .github/scripts/check-shipped-frames.sh
+
+  test:
+    name: Test (SPM)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: .github/scripts/select-xcode.sh
+      - name: Resolve packages
+        working-directory: ${{ env.APP_DIR }}
+        run: swift package resolve
+      - name: Build (SPM)
+        working-directory: ${{ env.APP_DIR }}
+        run: swift build --configuration debug
+      # The suite is platform-agnostic and runs on the macOS host. It used to be
+      # a two-entry iOS matrix, which doubled the runtime and proved nothing:
+      # both entries ran this exact command and the `destination` they set was
+      # never passed to anything. Simulator coverage belongs in build-app.
+      - name: Test (SPM)
+        working-directory: ${{ env.APP_DIR }}
+        run: swift test --parallel --enable-code-coverage
+      - name: Coverage summary
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          xcrun llvm-cov report \
+            .build/debug/HexNFCPackageTests.xctest/Contents/MacOS/HexNFCPackageTests \
+            -instr-profile=.build/debug/codecov/default.profdata \
+            -ignore-filename-regex='Tests|\.build|Package\.swift' || true
+
+  build-app:
+    name: Build app target
+    runs-on: macos-latest
+    # Deliberately depends on nothing. This used to be `needs: [lint, test]`,
+    # which meant a style violation anywhere skipped the only job that compiles
+    # a `#if os(iOS)` file at all: swift build on the macOS host does not read
+    # ScanSheet, OperationsSheet, AdvancedConsoleSheet, LibrarySheet or
+    # CoreNFCSession. Lint drifted, this was skipped with it, and the iOS
+    # sources went unbuilt on CI for as long as that lasted. Whether the app
+    # compiles is not downstream of whether the imports are sorted, so the two
+    # now fail independently and each says what it means.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: .github/scripts/select-xcode.sh
+      - name: Build for iOS Simulator (no signing)
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          xcodebuild \
+            -project HexNFC.xcodeproj \
+            -scheme HexNFC \
+            -destination "generic/platform=iOS Simulator" \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build

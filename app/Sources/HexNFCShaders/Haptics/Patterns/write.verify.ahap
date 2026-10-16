@@ -1,0 +1,41 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "write.verify",
+    "Description": "'Holding breath' — two soft transients over a low continuous rumble."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.00,
+        "EventType": "HapticContinuous",
+        "EventDuration": 0.40,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.15 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.30 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.00,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.40 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.50 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.22,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.50 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.50 }
+        ]
+      }
+    }
+  ]
+}

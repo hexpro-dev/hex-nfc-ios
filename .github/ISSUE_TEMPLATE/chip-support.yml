@@ -1,0 +1,28 @@
+name: Chip support
+description: Request support for a new NFC chip family
+labels: [chip-support]
+body:
+  - type: input
+    id: chip
+    attributes:
+      label: Chip family / part number
+      placeholder: "e.g. NTAG224, MIFARE DESFire EV3"
+    validations:
+      required: true
+  - type: input
+    id: datasheet
+    attributes:
+      label: Datasheet URL
+      description: Public manufacturer datasheet
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: What capabilities matter to you?
+      placeholder: "NDEF read, NDEF write, password protection, raw APDU, …"
+  - type: textarea
+    id: existing
+    attributes:
+      label: Have you tested with the closest existing chip in Hex NFC?
+      description: e.g. "I tried NTAG215 and the read fails at page 0x10"

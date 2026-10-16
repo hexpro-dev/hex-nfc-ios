@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- No "NDEF" here. That value covers NFCNDEFReaderSession, which this app
+	     never opens: every session is an NFCTagReaderSession (CoreNFCSession),
+	     and NDEF is read and written as raw commands on top of it. The iOS 26
+	     SDK rejects the value outright, and App Store Connect fails the upload
+	     with "NDEF is disallowed" rather than a build error, so a stray NDEF
+	     entry costs a whole Xcode Cloud run to find. -->
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>PACE</string>
+		<string>TAG</string>
+	</array>
+	<!-- iCloud sync (Settings > Sync, default off). The container id is
+	     mirrored by SwiftDataStack.cloudKitContainerID; the two must agree or
+	     the mirrored store will not open. -->
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.pro.hex.nfc</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudKit</string>
+	</array>
+	<!-- CloudKit mirroring is push-driven: without the Push Notifications
+	     capability the remote store never tells this device that anything
+	     changed. Xcode rewrites this to "production" on an App Store export. -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

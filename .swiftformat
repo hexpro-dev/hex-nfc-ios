@@ -1,0 +1,47 @@
+# Hex NFC: Swift formatting rules
+
+--swiftversion 5.10
+
+--indent 4
+--maxwidth 120
+--linebreaks lf
+--tabwidth 4
+--commas always
+--ifdef no-indent
+--self remove
+--semicolons never
+--operatorfunc spaced
+--ranges spaced
+--patternlet inline
+--stripunusedargs closure-only
+--header strip
+
+# app/Sources/HexPromoKit is vendored byte for byte from hexpro-dev/hex-promo
+# (see its PROVENANCE.md). --self remove and sortImports would both rewrite
+# upstream's file, which breaks the hash manifest that proves the copy is
+# unmodified. Adaptation happens in our own files at the boundary, never there.
+# The path is written from the repo root even though CI runs the tool inside
+# app. SwiftFormat resolves an exclude in a config file against that config
+# file's own directory, so the shorter `Sources/HexPromoKit` matches nothing
+# and the exclude quietly does not apply.
+--exclude .build,.public-mirror,DerivedData,app/Sources/HexPromoKit
+
+--enable isEmpty
+--enable redundantSelf
+--enable redundantParens
+--enable redundantReturn
+--enable redundantType
+--enable sortImports
+--enable trailingCommas
+--enable wrapEnumCases
+--enable wrapMultilineStatementBraces
+
+--disable wrapMultilineConditionalAssignment
+
+# SwiftLint opts into vertical_whitespace_between_cases, which wants a blank
+# line between every case. consistentSwitchCaseSpacing is happy either way but
+# insists a single switch be uniform, so on a switch mixing one-line and
+# multi-line cases it strips the blank lines SwiftLint just inserted. The two
+# then trade edits forever. SwiftLint's rule is the stricter of the pair and
+# satisfies this one by construction, so it wins.
+--disable consistentSwitchCaseSpacing

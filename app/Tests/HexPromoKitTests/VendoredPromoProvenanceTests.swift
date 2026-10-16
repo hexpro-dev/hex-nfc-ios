@@ -138,18 +138,26 @@ final class VendoredPromoProvenanceTests: XCTestCase {
         ".build", ".git", ".public-mirror", ".swiftpm", "DerivedData", "hex-docs", "node_modules", "xcuserdata",
     ]
 
-    /// A run of lower-case hex with no hex either side, at one of the two
-    /// lengths a git commit is written at: 40 for a full sha, 7 to 12 for an
-    /// abbreviation. Abbreviated as well as full, because the site that stayed
-    /// invisible longest wrote the pin seven characters long. The gap between
-    /// the bands is what keeps non-commit hex out: `{7,40}` also matched the
-    /// sixteen-character media etag in the ported fixtures, which would have
+    /// A run of lower-case hex with no letter or digit either side, at one of
+    /// the two lengths a git commit is written at: 40 for a full sha, 7 to 12
+    /// for an abbreviation. Abbreviated as well as full, because the site that
+    /// stayed invisible longest wrote the pin seven characters long. The gap
+    /// between the bands is what keeps non-commit hex out: `{7,40}` also matched
+    /// the sixteen-character media etag in the ported fixtures, which would have
     /// this test report a stale pin on a line holding no commit at all. The
-    /// lookarounds keep the manifest's 64-character sha256 rows out.
-    private static let commitPattern = #"(?<![0-9a-fA-F])(?:[0-9a-f]{7,12}|[0-9a-f]{40})(?![0-9a-fA-F])"#
+    /// lookarounds keep the manifest's 64-character sha256 rows out, and they
+    /// refuse any letter rather than only hex ones, because the App Store link
+    /// `apps.apple.com/app/id6801457461` sits near `hexpro-dev` in the README,
+    /// and with only hex refused, everything after its leading `i` read as an
+    /// abbreviated commit.
+    private static let commitPattern = #"(?<![0-9A-Za-z])(?:[0-9a-f]{7,12}|[0-9a-f]{40})(?![0-9A-Za-z])"#
 
     /// Lower-cased text that marks a commit found near it as a hex-promo one.
-    private static let hexPromoMarkers = ["hex-promo", "hexpro-dev", "hexpromokit"]
+    ///
+    /// Not the bare org name. `hexpro-dev/hex-promo` is caught by `hex-promo`
+    /// already, and since 1.0 the org also holds the public mirror, so a
+    /// commit written beside `hexpro-dev/hex-nfc-ios` read as a stale pin.
+    private static let hexPromoMarkers = ["hex-promo", "hexpromokit"]
 
     /// The commit recorded in `PROVENANCE.md`'s `Commit` row, which is the pin.
     /// Parsed rather than restated as a literal in Swift, for the reason the

@@ -210,8 +210,8 @@ final class Iso15693SimulatorTests: XCTestCase {
     func test_protectPage_armsAndClearsWriteProtection() {
         let sim = Iso15693Simulator()
         let mask = Data([0xC0, 0xDE, 0xC0, 0xDE])
-        /// Fresh tap → SELECT again (selection dies with the field), then
-        /// present read + write passwords, Selected-mode frames throughout.
+        // Fresh tap → SELECT again (selection dies with the field), then
+        // present read + write passwords, Selected-mode frames throughout.
         func selectAndAuthenticateBoth() {
             XCTAssertEqual(sim.handle(command: Data([0x02, 0x25])), Data([0x00]), "SELECT")
             for identifier in [UInt8(0x01), UInt8(0x02)] {

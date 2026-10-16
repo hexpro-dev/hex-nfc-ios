@@ -156,7 +156,7 @@ func type2Plan(_ profile: ChipProfile, _ credentials: TagTestCredentials) -> Tag
     //    disabled counter NAKs READ_CNT (a 1-byte frame, not 3). That's a valid
     //    state, not a fault, so we surface it and pass rather than fail the suite.
     steps.append(TagTestStep("t2.counters", "NFC counter", safety: .readOnly, requires: .counterRead) { tag, _ in
-        /// Decode a 24-bit little-endian counter frame, or nil for a NAK/short frame.
+        // Decode a 24-bit little-endian counter frame, or nil for a NAK/short frame.
         func decode(_ frame: Data) -> Int? {
             guard frame.count >= 3 else { return nil }
             let b = [UInt8](frame)

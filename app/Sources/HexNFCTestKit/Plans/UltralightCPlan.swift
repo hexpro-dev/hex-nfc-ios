@@ -16,9 +16,9 @@ import HexNFCRecords
 func ultralightCPlan(_ profile: ChipProfile, _ credentials: TagTestCredentials) -> TagTestPlan {
     var steps: [TagTestStep] = []
 
-    /// The harness key, built once. A malformed key is a programming error in
-    /// `TagTestCredentials`, not a tag fault, so the steps that need it report
-    /// that plainly rather than throwing a protocol error at a tag.
+    // The harness key, built once. A malformed key is a programming error in
+    // `TagTestCredentials`, not a tag fault, so the steps that need it report
+    // that plainly rather than throwing a protocol error at a tag.
     @Sendable func harnessKey(_ ctx: TagTestContext) -> UltralightCKey? {
         try? UltralightCKey(cipherOrder: ctx.credentials.ultralightCKey)
     }

@@ -912,8 +912,8 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
         let flags = NFCISO15693RequestFlag(rawValue: bytes[0])
         let opcode = bytes[1]
         let params = Array(bytes.dropFirst(2))
-        /// `[firstBlock, countMinusOne]` → an `NSRange`, the shape CoreNFC's
-        /// multi-block calls take. ISO 15693 encodes "one less than the count".
+        // `[firstBlock, countMinusOne]` → an `NSRange`, the shape CoreNFC's
+        // multi-block calls take. ISO 15693 encodes "one less than the count".
         func blockRange() throws -> NSRange {
             guard params.count >= 2 else {
                 throw TagError.protocolError("missing block range", diagnostics: command.bytes.hexString)

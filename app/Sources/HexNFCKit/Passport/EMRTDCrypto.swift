@@ -209,9 +209,9 @@ public enum EMRTDCrypto {
         var output = Data(count: input.count + kCCBlockSize3DES)
         let outputCapacity = output.count
         var moved = 0
-        /// Nest the IV access so its buffer stays valid for the whole CCCrypt
-        /// call (a pointer taken from `withUnsafeBytes` is invalid once the
-        /// closure returns).
+        // Nest the IV access so its buffer stays valid for the whole CCCrypt
+        // call (a pointer taken from `withUnsafeBytes` is invalid once the
+        // closure returns).
         func run(ivPointer: UnsafeRawPointer?) -> CCCryptorStatus {
             output.withUnsafeMutableBytes { outBuf in
                 input.withUnsafeBytes { inBuf in

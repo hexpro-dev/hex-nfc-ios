@@ -146,10 +146,10 @@ final class LibraryRepositoryTests: XCTestCase {
     func test_recordScan_dedupesExactDuplicate_andRefloatsTimestamp() throws {
         let repo = try makeRepo()
         let now = Date()
-        /// Two *independently constructed* record arrays, as two real taps of the
-        /// same tag produce: `NDEFCodec` mints a fresh `id: UUID` per payload on
-        /// every decode. Reusing one array here is what let the id leak into
-        /// `contentFingerprint` go unnoticed, so the arrays must not be shared.
+        // Two *independently constructed* record arrays, as two real taps of the
+        // same tag produce: `NDEFCodec` mints a fresh `id: UUID` per payload on
+        // every decode. Reusing one array here is what let the id leak into
+        // `contentFingerprint` go unnoticed, so the arrays must not be shared.
         func scannedRecords() -> [NDEFRecord] {
             [.uri(URIRecord(uri: "https://hex.pro"))]
         }

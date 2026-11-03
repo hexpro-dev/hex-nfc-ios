@@ -10,7 +10,8 @@ tags:
 
 Memory dump copies a tag's pages into a `.bin` file and hands that file to the
 iOS share sheet. It only reads. The tag is the same afterwards. The dump takes
-one tap of the tag and never asks you to type the tag's UID back.
+one tap of the tag, or two on a tag whose password gates reading, and never asks
+you to type the tag's UID back.
 
 You need an iPhone with NFC, Hex NFC installed from the App Store and the tag
 in your hand. If you have not read a tag with the app before, start with
@@ -35,40 +36,52 @@ Memory dump screen without sending the file, it is gone. You have to read the
 tag again.
 :::
 
-::::steps
-:::step[Open the scan screen]
+:::::steps
+::::step[Open the scan screen]
 In Hex NFC, on the home screen, tap **Scan**. The scan screen opens and begins
 looking for a tag.
-:::
+::::
 
-:::step[Hold the tag against your iPhone]
+::::step[Hold the tag against your iPhone]
 Rest the top edge of your iPhone flat on the tag and keep it still for about a
 second. The Tag screen opens with what the tag holds.
-:::
+::::
 
-:::step[Open Operations]
+::::step[Open Operations]
 On the Tag screen, tap the menu button at the top right, the one
 to the left of **Write**. The menu holds two rows, **Save as preset…** and
 **Operations…**. Tap **Operations…**.
-:::
+::::
 
-:::step[Start the dump]
+::::step[Start the dump]
 Tap **Memory dump**. The screen opens and starts scanning at once, with no
 confirmation in between.
-:::
+::::
 
-:::step[Hold the tag against your iPhone again]
+::::step[Hold the tag against your iPhone again]
 Rest the top edge of your iPhone on the tag once more. The status line reads
 "Hold the tag against the top of your iPhone." while it waits. It changes to
 "Reading…" once the tag answers. At the end it shows "Memory dump ready." with
 the number of bytes captured under it.
+
+:::figure[While the tag is being read, the iOS sheet still reads "Hold tag to dump memory." and the status line behind it reads "Reading…".]
+![The Memory dump screen dimmed behind the iOS scanning sheet. The sheet reads Hold tag to dump memory above Cancel, and the status line behind it reads Reading.](../../../assets/operations-memory-dump--reading.png)
 :::
 
-:::step[Share the file]
+On a tag whose password also gates reading, the dump stops before it reads
+anything. A card headed "Tag is protected" asks for the tag's password or key.
+Enter it, tap **Unlock & dump**, then hold the tag against your iPhone again.
+::::
+
+::::step[Share the file]
 Tap **Share .bin**, then choose where to send the file. That button appears
 only after a read that finished.
+
+:::figure[A finished read shows "Memory dump ready." with the byte count under it, and **Share .bin** below that.]
+![The Memory dump result: Memory dump ready in green with a tick, Captured 180 bytes under it, and a blue Share .bin button.](../../../assets/operations-memory-dump--done-with-share.png)
 :::
 ::::
+:::::
 
 ## What the file holds
 
@@ -120,6 +133,10 @@ listed at the top of this page. NTAG424 DNA, ICODE SLIX, ICODE SLIX2, the
 MIFARE DESFire chips and FeliCa all answer that way. The
 [chip support matrix](../developer/chip-support-matrix.md) lists what each chip
 can do.
+
+:::figure[On a chip the dump cannot read, the screen shows "This tag does not support that operation." with **Diagnostics** and **Try again** under it.]
+![The Memory dump screen after a refused chip. A red warning reads This tag does not support that operation, above a Diagnostics row and a Try again button.](../../../assets/operations-memory-dump--unsupported-chip.png)
+:::
 
 For a tag that drops out partway through a read, see
 [If a tag does not scan or write](troubleshooting.md). Go there too for a

@@ -178,19 +178,14 @@ public struct UltralightCProtectionDriver: Sendable {
         }
         let ekRndB = Data(challenge.dropFirst().prefix(Self.blockSize))
 
-        let zeroIV = Data(repeating: 0, count: Self.blockSize)
-        let rndB = try EMRTDCrypto.tripleDESCBCDecrypt(key: key.cipherOrder, iv: zeroIV, data: ekRndB)
-        let rndBPrime = NTAG424Crypto.rotateLeftByOne(rndB)
-
+        // The arithmetic is shared with DESFire's AuthenticateISO, and the
+        // datasheet vector in `UltralightCCryptoTests` pins it through here.
         let rndA = makeRandom(Self.blockSize)
-        // IV chains from the ciphertext we just received, per ISO/IEC 10116.
-        let token = try EMRTDCrypto.tripleDESCBCEncrypt(
-            key: key.cipherOrder, iv: ekRndB, data: rndA + rndBPrime
-        )
+        let handshake = try ISO3DESHandshake(key: key.cipherOrder, challenge: ekRndB, rndA: rndA)
 
         // Leg 2: prove we hold the key, and challenge the card in the same frame.
         let response = try await transceive(
-            RawCommand(bytes: Data([Self.continueCommand]) + token, name: "AUTHENTICATE part 2")
+            RawCommand(bytes: Data([Self.continueCommand]) + handshake.token, name: "AUTHENTICATE part 2")
         )
         guard response.count >= 1 + Self.blockSize,
               response[response.startIndex] == Self.successStatus
@@ -204,11 +199,7 @@ public struct UltralightCProtectionDriver: Sendable {
 
         // Verify the card's half of the handshake.
         let ekRndAPrime = Data(response.dropFirst().prefix(Self.blockSize))
-        let chainIV = Data(token.suffix(Self.blockSize))
-        let rndAPrime = try EMRTDCrypto.tripleDESCBCDecrypt(
-            key: key.cipherOrder, iv: chainIV, data: ekRndAPrime
-        )
-        guard rndAPrime == NTAG424Crypto.rotateLeftByOne(rndA) else {
+        guard try handshake.cardProvesKey(ekRndAPrime) else {
             throw TagError.authFailed(
                 diagnostics: "card's final cryptogram did not verify: it answered the handshake "
                     + "but does not hold the same key. Not a genuine MF0ICU2, or a clone that "

@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-03
+
+### Added
+- A passport's details can now come from the camera. When the app asks for
+  them, Scan photo page reads the two lines at the bottom of the photo page
+  with no button to press: line the page up with the outline on screen, and
+  the number and dates lock in with a tick. Check them, then hold the passport
+  to the phone as before. The image is read on the phone and never kept.
+  Typing the details still works.
+- A Docs button on the home screen opens the user guide on apps.hex.pro, in
+  the app's language.
+- Send Feedback, in Settings, sends a message straight to Hex Pro. The form
+  shows exactly what goes with it (app version, iOS version, device model and
+  language) and never includes anything from your tags or history. If it
+  can't reach Hex Pro, it keeps your message and offers to send it by email.
+- Rate Hex NFC, in Settings, opens the App Store review page.
+- Now and then, after a few successful writes or a transit card or passport
+  read, the home screen asks "Loving Hex NFC?" in a card at the bottom. It
+  never gets in the way, appears at most once a month, and stops asking once
+  you answer.
+- Hex NFC now finds Type 4 tags that aren't made by NXP, such as an Android
+  phone emulating a tag. iOS never handed these to the app
+  before, so the scan sheet just kept waiting.
+- Tapping an NFC health device, such as a NovoPen 6 or NovoPen Echo Plus
+  insulin pen, now shows what it is instead of nothing at all. Hex NFC doesn't
+  read a pen's dose history, so the screen links to an app that does. It never
+  writes to a health device and saves nothing from one.
+- A blank MIFARE DESFire card can now be set up as an NDEF tag. Format gives it
+  the NDEF application it needs, after which it reads and writes like any
+  other tag, and the new Remove NDEF setup operation returns it to blank. This
+  has been confirmed on DESFire EV3 cards; EV1 and EV2 cards take the same
+  steps but have not been tried yet. Transit and access cards are left as they
+  are.
+
+### Changed
+- The privacy policy and terms in Settings > Legal now match the copies on
+  apps.hex.pro, effective 31 October 2026. The privacy policy no longer lists
+  contacts, location and Bluetooth, which no released version has asked for.
+  The terms now cover feedback sent from the app, and say that Hex NFC reads
+  no measurements from an NFC health device and is not a medical device.
+- The About text in Settings and the NFC permission prompt now say that,
+  with iCloud sync turned on, your scan history also goes to your own iCloud.
+
+### Fixed
+- Chinese travel permits no longer show invented passport details. The app
+  read them as identity cards, so a permit showed letters as the date of
+  birth, half of its document number and the wrong nationality. It now reads
+  only what the permit's own layout holds, heads the result Travel permit, and
+  leaves out what the permit does not carry.
+- A document number longer than nine characters, as on a Belgian identity
+  card, is now kept whole when you type a document's details. It used to be
+  cut to nine characters, which the card refused. Other names stored on the
+  chip now show, and dates that some chips store in packed form now read as
+  dates.
+- Writing straight after deleting a tag's last record no longer closes the
+  app. On iOS 27, pressing Write within a moment of swiping away the last
+  record in the editor closed the app instead of starting the write, because
+  the emptied record list was still on its way off the screen.
+
+## [1.0.1] - 2026-10-21
+
+### Fixed
+- The app no longer quits when it opens a tag. On iOS 26 and earlier, 1.0
+  closed itself the moment the tag editor appeared, which is straight after
+  scanning an ordinary tag, after Build, and after choosing a tag in History.
+  Passports, transit cards and the Advanced console were not affected. The 1.0
+  build came from a newer Xcode than the one it was tested with, and that Xcode
+  turned the editor's VoiceOver rotors into something only iOS 27 can load.
+
 ## [1.0.0] - 2026-10-16
 
 First release on the App Store.
@@ -151,5 +220,6 @@ First release on the App Store.
   License 2.0 on the Change Date (2030-06-01).
 
 
-[Unreleased]: https://github.com/hexpro-dev/hex-nfc-ios/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/hexpro-dev/hex-nfc-ios/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/hexpro-dev/hex-nfc-ios/releases/tag/v1.0.2
 [1.0.0]: https://github.com/hexpro-dev/hex-nfc-ios/releases/tag/v1.0.0

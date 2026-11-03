@@ -7,7 +7,8 @@ tags:
 ---
 
 A high-level tour of how Hex NFC, a SwiftUI app for iPhone on iOS 17 and later,
-is organised. For day-to-day detail, read the source.
+is organised. For day-to-day detail, read the
+[source](https://github.com/hexpro-dev/hex-nfc-ios).
 
 ## Module graph
 
@@ -62,7 +63,16 @@ not been checked against real chips. NTAG424 DNA is identified from the
 wrapped `GET_VERSION` APDU. That decoder checks only the vendor and
 hardware-type bytes, so any NXP chip reporting the NTAG 4xx hardware type is
 identified as an NTAG424 DNA and given that chip's profile. DESFire is
-identified from its native `GET_VERSION` frame.
+identified from its native `GET_VERSION` frame. A tag that iOS delivers on the
+NFC Forum NDEF application (`D2760000850101`, declared after the eMRTD AID) is
+first read with plain SELECT and READ BINARY commands (`Type4NDEFProbe`). A
+message that opens with a PHD record is an NFC health device: `PHDAssociation`
+parses its association request, `HealthDeviceMaker` names the maker from its
+OUI, and the profile carries only `.personalHealthDevice`, so writes, Erase and
+console commands are refused before a frame is sent. Any other tag is asked for
+`GET_VERSION`, which recognises an NTAG424 DNA or a DESFire delivered this way
+(`identify(type4Version:)`), and anything else gets the generic `genericType4`
+profile: NDEF read, NDEF write and raw commands.
 MIFARE Ultralight C refuses `GET_VERSION`, which halts the tag, so the session
 restarts polling and recognises the chip from a read of pages 0 and 28h.
 ISO 15693 tags resolve from the IC manufacturer code plus Get System
@@ -87,8 +97,11 @@ datasheet. The console lists every preset and runs whatever is loaded without
 checking the tag's family, so nothing stops an EM preset being sent to a tag
 that is not an EM chip.
 
-The target also holds the protection driver for each family that has one, the
-FeliCa `TransitReader` and the read-only passport reader. `EPassportReader`
+The target also holds the protection driver for each family that has one,
+`DESFireNDEFDriver`, which sets up and removes the NDEF application on a blank
+MIFARE DESFire EV1, EV2 or EV3 and proves from the card's own structure whether
+a setup is this app's, the FeliCa `TransitReader` and the read-only passport
+reader. `EPassportReader`
 runs PACE when the document's `EF.CardAccess` advertises a configuration it
 supports, and BAC otherwise. If an advertised PACE fails, the read fails; it
 does not retry with BAC. When it can read the chip's security object
@@ -107,7 +120,8 @@ SwiftData stack (`SwiftDataStack`) for three models:
 - `Preset`: named tag images (a list of records and optional capability
   requirements).
 - `HistoryEntry`: a scan record, written by the scan flow after each
-  successful tag or transit card read and never for a passport. A repeat of an
+  successful tag or transit card read, and never for a passport or a health
+  device. A repeat of an
   identical scan updates the existing row's time instead of adding one.
   Unpinned entries past the 50 most recent are trimmed after each insert, and
   unpinned entries older than 90 days are deleted at launch.
@@ -155,12 +169,21 @@ loop from scan to edit to write is a sheet chain (`ScanSheet`, then
 popped between steps. Screens include `RecordEditorSheet`, which is
 polymorphic by record kind.
 
-The target also holds two HTTP clients of its own. `CostsClient` fetches the
+The target also holds three HTTP clients of its own. `CostsClient` fetches the
 development-costs figure shown on the home screen when the root view appears,
 with no action from the user. `StationSubmissionClient` runs only when the user
 submits a name for a transit station the bundled data cannot name, and posts
 that name with the station's line, station and region codes and the card's
 system code. It does not send the card's IDm, balance or history.
+`FeedbackClient` runs only when the user taps Send on the feedback form, and
+posts the typed message, an optional reply address, and the app version, iOS
+version, device model and app language the form displays to `api.hex.pro`. It
+sends nothing read from a tag and nothing from History.
+
+The passport key can also come from the camera. `MRZCameraView` passes frames
+to Vision text recognition on the device, `MRZLineReader` in `HexNFCRecords`
+turns the recognised lines into candidate keys, and `MRZScanConsensus` votes
+across frames before it locks one in. No frame is stored.
 
 ### `HexPromoKit`
 
@@ -188,8 +211,9 @@ the target but have no screen that reaches it.
 In-process chip simulators for NTAG 210µ, NTAG213/215/216, NTAG213 TT,
 NTAG424 DNA, MIFARE Ultralight C, MIFARE Ultralight EV1 (48- and 128-byte),
 MIFARE DESFire EV3, ICODE SLIX and SLIX2 (one ISO 15693 simulator at 28 or 80
-blocks), EM Microelectronic V10/V11/V16, Suica, an electronic passport (eMRTD)
-and an unrecognised Type 2 fallback. Each is a class conforming to
+blocks), EM Microelectronic V10/V11/V16, Suica, an electronic passport (eMRTD),
+a non-NXP NFC Forum Type 4 tag and an NFC health device (`Type4NDEFSimulator`,
+`PHDCDeviceSimulator`), and an unrecognised Type 2 fallback. Each is a class conforming to
 `ChipSimulator`, whose raw transceive surface is
 `func handle(command: Data) -> Data`. Simulators are reference types so the
 mutations a test drives (counters, attempt limits, lock bytes) are visible

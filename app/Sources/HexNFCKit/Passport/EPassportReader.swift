@@ -70,6 +70,13 @@ public struct EPassportReader: Sendable {
         // Discover which data groups exist (best-effort). Also log the full DG
         // list the document advertises — non-PII (just tag numbers), and the key
         // to seeing what else a given passport exposes beyond DG1/2/11/12.
+        // Every best-effort file that was attempted and did not come back. A
+        // link that drops after DG1 still decodes into a passport, with the
+        // photo and the rest silently missing, so this is the only record that
+        // the read was cut short. The review prompt counts only a complete read
+        // as one that went well.
+        var unreadFiles: [String] = []
+
         var present: [Int]?
         if let com = try? await readFile(channel, fid: Self.efCOM) {
             present = Self.presentDataGroups(inEFCOM: com)
@@ -77,6 +84,8 @@ public struct EPassportReader: Sendable {
                 let tags = list.value.map { String(format: "%02X", $0) }.joined(separator: " ")
                 NFCTrace.shared.note("EF.COM advertises DG tags: \(tags)", label: "eMRTD")
             }
+        } else {
+            unreadFiles.append("EF.COM")
         }
 
         var groups: [Int: Data] = [:]
@@ -87,19 +96,31 @@ public struct EPassportReader: Sendable {
         if options.includeFaceImage, present?.contains(2) ?? true {
             progress?(0.55, .reading(dataGroup: 2))
             groups[2] = try? await readFile(channel, fid: Self.dgFID(2))
+            if groups[2] == nil {
+                unreadFiles.append("DG2")
+            }
         }
         if options.includeExtendedDetails {
             if present?.contains(7) ?? true {
                 progress?(0.70, .reading(dataGroup: 7))
                 groups[7] = try? await readFile(channel, fid: Self.dgFID(7))
+                if groups[7] == nil {
+                    unreadFiles.append("DG7")
+                }
             }
             if present?.contains(11) ?? true {
                 progress?(0.75, .reading(dataGroup: 11))
                 groups[11] = try? await readFile(channel, fid: Self.dgFID(11))
+                if groups[11] == nil {
+                    unreadFiles.append("DG11")
+                }
             }
             if present?.contains(12) ?? true {
                 progress?(0.85, .reading(dataGroup: 12))
                 groups[12] = try? await readFile(channel, fid: Self.dgFID(12))
+                if groups[12] == nil {
+                    unreadFiles.append("DG12")
+                }
             }
         }
 
@@ -107,13 +128,25 @@ public struct EPassportReader: Sendable {
         // last and best-effort; it drives the integrity check only, so a missing
         // or unreadable SOD just leaves integrity unverified.
         let sodData = try? await readFile(channel, fid: Self.efSOD)
+        if sodData == nil {
+            unreadFiles.append("EF.SOD")
+        }
 
         progress?(0.95, .decoding)
-        guard var data = PassportDataDecoder.decode(dataGroups: groups) else {
+        guard var data = PassportDataDecoder.decode(dataGroups: groups, accessKey: mrz) else {
             throw TagError.malformedResponse(
                 groups[1] ?? Data(), diagnostics: "eMRTD DG1 decode failed"
             )
         }
+        data.unreadFiles = unreadFiles
+        if !unreadFiles.isEmpty {
+            NFCTrace.shared.note("read incomplete, not read: \(unreadFiles.joined(separator: ", "))", label: "eMRTD")
+        }
+        NFCTrace.shared.note(
+            "DG1 layout: \(data.mrzLayout.rawValue)"
+                + (data.mrzLayout.isICAO ? "" : ", shape \(Self.mrzShape(data.rawMRZ))"),
+            label: "eMRTD"
+        )
 
         if let sodData, let sod = LDSSecurityObject.parse(sodData) {
             data.integrity = Self.integrityReport(sod: sod, dataGroupFiles: groups)
@@ -127,6 +160,20 @@ public struct EPassportReader: Sendable {
             }
         }
         return data
+    }
+
+    /// The MRZ with every letter as `A` and every digit as `9`, `<` and line
+    /// breaks kept: enough to work out a layout this reader does not know from
+    /// a trace, without the holder's details in the log.
+    static func mrzShape(_ raw: String) -> String {
+        String(raw.map { character -> Character in
+            switch character {
+            case _ where character.isLetter: "A"
+            case _ where character.isNumber: "9"
+            case "\n": "/"
+            default: character
+            }
+        })
     }
 
     // MARK: - Integrity (data-group hashes vs the signed security object)

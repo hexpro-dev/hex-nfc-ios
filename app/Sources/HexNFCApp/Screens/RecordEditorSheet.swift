@@ -334,7 +334,9 @@ private struct CryptoEditorBody: View {
                     Text(network.rawValue.capitalized).tag(network)
                 }
             }
-            HexField("Address", text: $record.address, keyboard: .asciiCapable)
+            // Its own key: "Address" is also the passport holder's postal
+            // address, and Japanese names the two differently (住所, アドレス).
+            HexField(LocalizedStringKey("crypto.address"), text: $record.address, keyboard: .asciiCapable)
         }
         Section {
             HexField("Amount", text: Binding(

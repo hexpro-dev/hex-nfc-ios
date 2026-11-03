@@ -183,4 +183,68 @@ final class EPassportReaderTests: XCTestCase {
         XCTAssertEqual(data.documentNumber, "L898902C")
         XCTAssertEqual(data.integrity?.status, .verified)
     }
+
+    /// The trace gets the MRZ's shape for a layout the reader does not know,
+    /// never its characters.
+    func test_mrzShape_keepsOnlyCharacterClasses() {
+        XCTAssertEqual(EPassportReader.mrzShape("CT1234<\nLMLN<<G"), "AA9999</AAAA<<A")
+    }
+
+    // MARK: - Completeness
+
+    func test_reader_cleanRead_isComplete() async throws {
+        let tag = SimulatedConnectedTag(simulator: EPassportSimulator())
+
+        let data = try await EPassportReader().read(tag, mrz: EPassportSimulator.specimenMRZ)
+
+        XCTAssertEqual(data.unreadFiles, [])
+        XCTAssertTrue(data.isComplete)
+    }
+
+    /// The passport moves away as the photo starts. DG1 is in hand, so the read
+    /// still returns a passport, and that passport has to say it is partial:
+    /// with nothing but a missing photo to go on, it reads the same as a
+    /// document that never had one.
+    func test_reader_linkDropsAfterDG1_isIncomplete() async throws {
+        let tag = LinkDroppingTag(SimulatedConnectedTag(simulator: EPassportSimulator()))
+
+        let data = try await EPassportReader().read(tag, mrz: EPassportSimulator.specimenMRZ) { _, stage in
+            if case .reading(dataGroup: 2) = stage {
+                tag.drop()
+            }
+        }
+
+        XCTAssertEqual(data.documentNumber, "L898902C")
+        XCTAssertNil(data.faceImage)
+        XCTAssertEqual(data.unreadFiles, ["DG2", "DG7", "DG11", "DG12", "EF.SOD"])
+        XCTAssertFalse(data.isComplete)
+    }
+}
+
+/// Answers through the simulator until `drop()`, then throws the transport's
+/// tag-lost error for every APDU after, which is how a passport that has left
+/// the field looks to the reader.
+private final class LinkDroppingTag: EPassportReadable, @unchecked Sendable {
+    private let base: SimulatedConnectedTag
+    private let lock = NSLock()
+    private var dropped = false
+
+    init(_ base: SimulatedConnectedTag) {
+        self.base = base
+    }
+
+    var uid: Data {
+        base.uid
+    }
+
+    func drop() {
+        lock.withLock { dropped = true }
+    }
+
+    func sendAPDU(_ command: Data) async throws -> Data {
+        if lock.withLock({ dropped }) {
+            throw TagError.tagLost()
+        }
+        return try await base.sendAPDU(command)
+    }
 }

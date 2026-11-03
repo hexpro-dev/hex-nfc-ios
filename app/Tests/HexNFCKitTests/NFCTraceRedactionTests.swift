@@ -101,6 +101,23 @@ final class NFCTraceRedactionTests: XCTestCase {
         XCTAssertTrue(isSecret([0x90, 0xC4, 0x00, 0x00], ntag213), "ChangeKey carries the encrypted new key")
     }
 
+    /// Remove NDEF setup authenticates a DESFire with AuthenticateISO. The
+    /// legacy and AES forms are masked alongside it, so no DESFire key exchange
+    /// reaches the trace whichever one a later change sends.
+    func test_desfireAuthentication_isMasked() {
+        XCTAssertTrue(isSecret([0x90, 0x1A, 0x00, 0x00, 0x01, 0x00, 0x00], nil), "AuthenticateISO")
+        XCTAssertTrue(isSecret([0x90, 0x0A, 0x00, 0x00, 0x01, 0x00, 0x00], nil), "legacy Authenticate")
+        XCTAssertTrue(isSecret([0x90, 0xAA, 0x00, 0x00, 0x01, 0x00, 0x00], nil), "AuthenticateAES")
+    }
+
+    /// The setup frames carry application and file settings, not keys, and
+    /// seeing them whole is how a refusal on real silicon gets diagnosed.
+    func test_desfireSetupFrames_areNotMasked() {
+        for instruction: UInt8 in [0xCA, 0xCD, 0x3D, 0xFC, 0x6A, 0x45, 0x64] {
+            XCTAssertFalse(isSecret([0x90, instruction, 0x00, 0x00], nil), String(format: "%02X", instruction))
+        }
+    }
+
     /// Deliberately readable. Its CmdData is access rights, not key material, and
     /// seeing the whole frame is what diagnoses a real-silicon PARAMETER_ERROR.
     func test_changeFileSettings_isDeliberatelyNotMasked() {

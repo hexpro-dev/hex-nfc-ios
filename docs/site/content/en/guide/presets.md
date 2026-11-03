@@ -84,41 +84,45 @@ Tap **Save** again. If the same reason comes back, tap **Cancel**. The records
 are still on the Tag screen. You can write them straight to a tag instead of
 keeping them as a preset.
 
-## Write a preset to a tag
+## Write a preset to a tag {#write-a-preset-to-a-tag}
 
 A padlock beside a preset's name means it carries protection settings. The row
 stops there. It does not tell you whether the write will arm the tag, because
-that turns on the secret held beside the preset. The secret is not shown. A
+that depends on the secret held beside the preset. The secret is not shown. A
 preset you saved on this iPhone after entering a password or a key of your own
 holds that secret and arms the tag. A preset saved from a tag that was already
 protected, where you never entered its password, holds none. It writes its
 records and protects nothing. If you cannot tell which one is in front of you,
 treat it as the arming kind.
 
-::::steps
-:::step[Open the Library]
+:::::steps
+::::step[Open the Library]
 On the home screen, tap **Library**. The Library screen opens on **Presets**, with the
 preset you changed most recently at the top.
-:::
+::::
 
-:::step[Start the write]
+::::step[Start the write]
 Swipe the preset a short way from its left edge, then tap **Write**. The
 **Library** closes and the write screen opens.
-:::
 
-:::step[Hold the tag against your iPhone]
+:::figure[A short swipe from a preset's left edge reveals **Write** and **Share**.]
+![The Presets tab with the Welcome note row slid to the right, showing a blue Write button and a green Share button at its left edge.](../../../assets/library--preset-swipe-leading.png)
+:::
+::::
+
+::::step[Hold the tag against your iPhone]
 Hold the tag against the top of your iPhone while the screen reads "Hold tag
 against the top of your iPhone". It reads "Locked in" once the records are on
 the tag.
-:::
 ::::
+:::::
 
 :::warning[A preset that applies protection does not ask you to confirm the tag]
 A preset that carries protection settings and still holds its secret on this
 iPhone sets that secret on whatever tag you hold. This is the one place in the
 app where protection is armed with no first tap to read the tag. There is no UID
 to type back. Hold only the tag you meant to protect. Keep the preset for as long
-as those tags are in use. Writing it again is the way back into a tag it locked.
+as those tags are in use. Writing it again is the way back into a tag it protected.
 Deleting it deletes that copy of the secret.
 :::
 
@@ -131,6 +135,10 @@ and gives the date the preset last changed.
 A padlock beside the name marks a preset that carries protection settings, and
 VoiceOver reads it as "Applies protection". What that padlock does and does not
 promise is above, under [Write a preset to a tag](#write-a-preset-to-a-tag).
+
+:::figure[A padlock after a preset's name marks one that carries protection settings.]
+![The Library on the Presets tab with two presets. Staff only note has a yellow padlock after its name and Welcome note has none. Both read 1 record and 24 Oct 2026.](../../../assets/library--presets-list.png)
+:::
 
 Swiping a preset from its left edge reveals **Write** and **Share**. Swiping it
 from its right edge reveals **Delete** and **Duplicate**. Swipe a short way, then

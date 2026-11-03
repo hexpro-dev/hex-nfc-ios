@@ -38,6 +38,10 @@ Hex NFC opens on the home screen, which carries four tiles.
 - Tap **Advanced** to send a raw command to a chip whose command set you know:
   [Send a raw command to a tag](advanced-console.md).
 
+:::figure[The home screen opens with four tiles: **Scan**, **Build**, **Library** and **Advanced**.]
+![The Hex NFC home screen. Below the logo and a gear button, four tiles read Scan, Build, Library and Advanced, each with a short subtitle.](../../../assets/home--four-tiles.png)
+:::
+
 ## Change what a tag holds
 
 Once a tag is open you can rebuild its records with
@@ -54,7 +58,7 @@ tag](erase-or-format.md), [Lock a tag permanently](permanent-lock.md) and
 
 [Read your first tag](quick-start.md) goes from the home screen to your first
 scan in about 5 minutes. [Tag protection](tag-protection.md) explains what a
-password covers and what it cannot get back. When a tag will not answer, go to
+password protects, and why a lost one cannot be recovered. When a tag will not answer, go to
 [If a tag does not scan or write](troubleshooting.md).
 [Settings](settings.md) lists every switch in the app, [Privacy and your
 data](privacy.md) says what stays on your iPhone, and [Common

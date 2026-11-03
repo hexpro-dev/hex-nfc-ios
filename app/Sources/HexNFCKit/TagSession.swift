@@ -184,9 +184,26 @@ public protocol ConnectedTag: AnyObject, Sendable {
     /// Conformers that never probe a version block inherit the `nil` default.
     var unidentifiedReport: UnidentifiedChipReport? { get }
 
+    /// What the chip declares, with the card's own NDEF answer folded in once it
+    /// has been asked (see `TagCapability.resolved`). For a DESFire this starts
+    /// as raw transceive alone and gains Read and Write from the card.
     var capabilities: TagCapability { get }
 
+    /// The association request a personal health device opened its exchange
+    /// with, when identification read one. `nil` for every other tag, and for a
+    /// health device whose request did not parse. Display-only, like
+    /// `unidentifiedReport`: the routing decision is `.personalHealthDevice`.
+    var healthDevice: PHDAssociation? { get }
+
     // MARK: NDEF
+
+    /// Ask the card what its NDEF structure allows, and keep the answer so that
+    /// `capabilities` reflects it for the rest of the activation.
+    ///
+    /// Only a chip whose NDEF support belongs to the card has anything to ask
+    /// (`ChipProfile.ndefDependsOnCard`). Every other conformer answers from
+    /// what it declares, through the default below.
+    func queryNDEFAccess() async throws -> NDEFAccess
 
     /// Read the NDEF message stored on the tag. The result is the raw
     /// concatenated payload of every record, suitable for passing to
@@ -281,6 +298,27 @@ public extension ConnectedTag {
         nil
     }
 
+    /// Conformers that never identify a health device have nothing to report.
+    var healthDevice: PHDAssociation? {
+        nil
+    }
+
+    /// Refuse anything that would put a write on the air to a personal health
+    /// device: an NDEF write, a memory write, a raw command.
+    ///
+    /// A PHDC device's NDEF file is its live protocol stream, so a write there
+    /// is a message to an insulin pen in the middle of its own exchange, and
+    /// raw commands are worse. The flows refuse first, with the same error
+    /// (`TagPreamble`, the scan routing); this is the backstop every conformer
+    /// calls at the top of each write primitive, so no new route can forget.
+    func refuseIfHealthDevice(_ operation: TagCapability) throws {
+        guard capabilities.contains(.personalHealthDevice) else { return }
+        throw TagError.healthDeviceIsReadOnly(
+            operation,
+            diagnostics: "uid=\(uid.hexString) chip=\(chip?.id.description ?? "unknown")"
+        )
+    }
+
     /// Default implementation chains single-command `transceive` calls. Real
     /// implementations may override for efficiency.
     func transceive(sequence: [RawCommand]) async throws -> [Data] {
@@ -301,6 +339,91 @@ public extension ConnectedTag {
                 diagnostics: "uid=\(uid.hexString) chip=\(chip?.id.description ?? "unknown")"
             )
         }
+    }
+
+    /// Conformers whose NDEF support never depends on the card answer from what
+    /// they declare.
+    func queryNDEFAccess() async throws -> NDEFAccess {
+        if capabilities.contains(.ndefWrite) {
+            return .readWrite
+        }
+        return capabilities.contains(.ndefRead) ? .readOnly : .notSupported
+    }
+
+    /// Refuses an NDEF write the card has said it cannot take, before any of it
+    /// is attempted. A no-op for every chip whose NDEF support the catalog
+    /// declares.
+    ///
+    /// Without it a DESFire with no NDEF application went to iOS's own NDEF
+    /// writer anyway, and that path reports a refusal as a lost tag, or, for an
+    /// empty write refused as unformatted, as success. Neither is what happened.
+    func requireCardNDEFWrite() async throws {
+        guard chip?.ndefDependsOnCard == true else { return }
+        let access = try await queryNDEFAccess()
+        guard access == .readWrite else {
+            throw TagError.capabilityUnsupported(
+                .ndefWrite,
+                diagnostics: "card NDEF access is \(access); uid=\(uid.hexString) "
+                    + "chip=\(chip?.id.description ?? "unknown")"
+            )
+        }
+    }
+
+    // MARK: DESFire NDEF setup
+
+    /// The one construction site for the DESFire NDEF driver, on the same terms
+    /// as `type2PasswordDriver`: Format, Remove NDEF setup, the scan and the
+    /// harness all reach the card through here, so the frames a test replays are
+    /// the frames that ship.
+    ///
+    /// `nil` for anything but a DESFire EV1, EV2 or EV3. The D40 generation, and
+    /// a DESFire whose generation byte this app could not name, cannot be relied
+    /// on to create an application with an ISO file ID and DF name, which the
+    /// NDEF Tag Application needs (NXP AN11004 §6.5).
+    var desfireNDEFDriver: DESFireNDEFDriver? {
+        guard case .type4(let variant) = chip?.family,
+              [.desfireEV1, .desfireEV2, .desfireEV3].contains(variant)
+        else { return nil }
+        return DESFireNDEFDriver { [self] in try await transceive($0) }
+    }
+
+    /// Read-only. See `DESFireNDEFState`.
+    func readDESFireNDEFState() async throws -> DESFireNDEFState {
+        try await requireDESFireNDEFDriver().readState()
+    }
+
+    /// After the driver's own read-back, iOS's reader is asked too. Its answer
+    /// goes to the trace and into `capabilities`, and is never the verdict:
+    /// whether nfcd sees an application created in the same activation is
+    /// something only a real card can say, and the read-back already proved
+    /// the card holds it.
+    func setUpDESFireNDEF() async throws -> DESFireSetupOutcome {
+        let outcome = try await requireDESFireNDEFDriver().setUp()
+        _ = try? await queryNDEFAccess()
+        return outcome
+    }
+
+    /// Read-only: whether Remove NDEF setup may proceed. See
+    /// `DESFireNDEFDriver.checkRemovable()`.
+    func checkDESFireNDEFRemovable() async throws -> Bool {
+        try await requireDESFireNDEFDriver().checkRemovable()
+    }
+
+    func removeDESFireNDEF() async throws -> DESFireRemoveOutcome {
+        let outcome = try await requireDESFireNDEFDriver().remove()
+        _ = try? await queryNDEFAccess()
+        return outcome
+    }
+
+    private func requireDESFireNDEFDriver() throws -> DESFireNDEFDriver {
+        guard let driver = desfireNDEFDriver else {
+            throw TagError.capabilityUnsupported(
+                .formatCC,
+                diagnostics: "DESFire NDEF setup needs an EV1, EV2 or EV3; this tag is "
+                    + "\(chip?.id.description ?? "unidentified")"
+            )
+        }
+        return driver
     }
 
     /// Throwaway default for conformers that store no Type-2 session. Harmless
@@ -757,6 +880,8 @@ extension ChipID: CustomStringConvertible {
         case .mifareDESFireEV2: "mifareDESFireEV2"
         case .mifareDESFireEV3: "mifareDESFireEV3"
         case .ePassport: "ePassport"
+        case .genericType4: "type4"
+        case .personalHealthDevice: "personalHealthDevice"
         case .unknown: "unknown"
         }
     }

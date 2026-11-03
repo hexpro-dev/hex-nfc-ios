@@ -27,31 +27,39 @@ preset rows.
 
 ## Identify the chip
 
-::::steps
-:::step[Open Hex NFC]
+:::::steps
+::::step[Open Hex NFC]
 Open Hex NFC. The Hex NFC home screen appears.
-:::
+::::
 
-:::step[Open the console]
-On the home screen, tap **Advanced**, the last of the four tiles, under the
-words "Raw command console". The console opens, and its empty scrollback reads
+::::step[Open the console]
+On the home screen, tap **Advanced**, the last of the four tiles. The
+tile's second line reads "Raw command console". The console opens, and its empty scrollback reads
 "Console idle. Tap a preset on the left, or type a sequence and Run." The
 preset list sits at the foot of the screen. It is not to the left.
-:::
 
-:::step[Start the identify scan]
+:::figure[The console opens with the status chip reading "Idle", an empty scrollback and **Presets** at the foot of the screen.]
+![The Advanced console just after it opens. The status chip at the top left reads Idle, with Identify to its right and the Skip identification switch below. The Command field shows its sample sequence, the scrollback holds only the idle hint, and the preset list starts with Read 16 bytes, Write 4 bytes and Halt.](../../../assets/advanced-console--idle.png)
+:::
+::::
+
+::::step[Start the identify scan]
 Tap **Identify**, the capsule to the right of the status chip. The scrollback
 adds "Identifying tag…", and the iOS scan sheet appears with
 "Hold tag to identify."
-:::
+::::
 
-:::step[Hold the tag against your iPhone]
+::::step[Hold the tag against your iPhone]
 Rest the top edge of your iPhone flat against the tag and keep it still. The
 scrollback names the chip and the tag's UID, and the chip's name appears
 beside **Presets**. The line reads
-"Identified: NTAG213 · 04:BA:4A:92:1B:21:90".
+"Identified: NTAG213 · 04:4C:25:0A:30:1F:91".
+
+:::figure[After an identify scan, the scrollback names the chip and its UID, and the chip's name sits beside **Presets** with that chip's presets at the top of the list.]
+![The Advanced console after identifying an NTAG213. The scrollback shows two lines, Identifying tag and then Identified: NTAG213 with the tag's UID. A green NTAG213 badge with a clear button sits beside Presets, and the first two presets in the list are written for the NTAG213.](../../../assets/advanced-console--identified.png)
 :::
 ::::
+:::::
 
 An identified chip re-orders the preset library. Presets written for that chip
 lead the list. Below them sit the ones that still apply to it:
@@ -93,13 +101,13 @@ named **Read 16 bytes**, whose bytes are `30:00`.
 
 ## Run a command
 
-::::steps
-:::step[Load a preset]
+:::::steps
+::::step[Load a preset]
 Tap a preset in the list under **Presets**. Its bytes go into **Command** and
 the console records the name of the preset you loaded. Nothing has been sent.
-:::
+::::
 
-:::step[Check what will be sent]
+::::step[Check what will be sent]
 Read the sequence in **Command** and edit it if you need to. Each pair of hex
 digits is one byte, colons separate the bytes within a command, and a comma
 separates one command from the next. An empty field shows the sample
@@ -107,17 +115,17 @@ separates one command from the next. An empty field shows the sample
 the field. Nothing is sent while the field is empty, and **Run** stays dim until
 you load a preset or type a sequence. Read as an example, it is two commands of
 three and six bytes, and the second one writes four bytes to a page.
-:::
+::::
 
-:::step[Send it]
+::::step[Send it]
 Tap the **Run** button. The status chip reads "Polling…", the scrollback adds
 "Polling for tag…", and the iOS scan sheet appears with "Hold tag for command."
-:::
+::::
 
-:::step[Hold the tag against your iPhone]
+::::step[Hold the tag against your iPhone]
 Rest the top edge of your iPhone flat against the tag and keep it still. The
 scrollback adds a connected line carrying the tag's UID and the chip, as in
-"Connected: 04:BA:4A:92:1B:21:90 · ntag213". The status chip then reads
+"Connected: 04:4C:25:0A:30:1F:91 · ntag213". The status chip then reads
 "Running…" while the commands go out.
 
 To stop before any byte reaches a tag, tap Cancel on the iOS sheet. The run
@@ -126,14 +134,18 @@ before a tag was found. Nothing was sent." Left alone with no tag against it,
 the sheet closes by itself and the status chip reads "No tag found". Once the
 console has read a tag, from **Run** or **Identify**, a cancel or a timeout on a
 later run is logged as an error line instead.
-:::
+::::
 
-:::step[Read the answers]
+::::step[Read the answers]
 Each command adds a sent line and a received line, and the received line says
 how many bytes came back. After the last answer the status chip reads "Done"
 and the scrollback ends with "Done."
+
+:::figure[After a run of **Read 16 bytes**, the scrollback holds one sent line and one received line of 16 bytes, and the status chip reads "Done".]
+![The Advanced console after a run of the Read 16 bytes preset on an NTAG213. The status chip reads Done and Command holds 30:00. The scrollback, scrolled to its end, shows the foot of the loaded preset line, Polling for tag, the connected line with the UID and ntag213, a TX line sending 30:00, an RX line marked 16 bytes with the bytes the tag returned, and Done.](../../../assets/advanced-console--run-finished.png)
 :::
 ::::
+:::::
 
 :::warning[The console checks nothing before it sends]
 A write command changes the tag the moment it goes out. Some pages on a chip
@@ -163,6 +175,10 @@ it off; it does not go back on its own when a run ends. The reason sits
 under the switch while it is on:
 "Commands go straight to the chip. Needed for chips that refuse GET_VERSION: the probe halts them and every later command fails."
 
+One check still runs with the switch on. When a tag could be an NFC health
+device, such as an insulin pen, the app reads just enough of it to tell, and it
+sends a health device none of your commands.
+
 ## If the console reports an error
 
 An error line ends the run, and the tap with it. The iOS scan sheet closes with
@@ -174,6 +190,9 @@ it, so to send anything more, tap **Run** again and present the tag.
   between one command and the next.
 - "Couldn't identify the tag." means the identify scan ended without a result.
   Tap **Identify** and present the tag again.
+- "This is a health device. Hex NFC never writes to health devices or sends
+  them commands." means the tag is a medical device, such as an insulin pen.
+  None of your commands was sent to it.
 - "Something unexpected went wrong." means the run stopped for a reason the app
   has no better words for. The rest of the line carries the detail.
 - Any other message on an error line is the app's own account of what the tag

@@ -6,7 +6,7 @@ body:
     id: chip
     attributes:
       label: Chip family / part number
-      placeholder: "e.g. NTAG224, MIFARE DESFire EV3"
+      placeholder: "e.g. NTAG 224 DNA, MIFARE Ultralight AES"
     validations:
       required: true
   - type: input

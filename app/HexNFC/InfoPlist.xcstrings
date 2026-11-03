@@ -31,43 +31,43 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يقرأ Hex NFC بطاقات NFC ويكتب عليها فقط عندما تلمس إحداها. ولا يغادر محتوى البطاقة جهازك إلا إذا اخترت إرسال اسم محطة."
+            "value" : "يقرأ Hex NFC بطاقات NFC ويكتب عليها فقط عندما تلمس إحداها. ولا يغادر محتوى البطاقة جهازك إلا إذا فعّلت المزامنة مع iCloud أو اخترت إرسال اسم محطة."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC reads and writes NFC tags only when you tap one. Tag contents stay on your device unless you choose to send a station name."
+            "value" : "Hex NFC reads and writes NFC tags only when you tap one. Tag contents stay on your device unless you turn on iCloud sync or choose to send a station name."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC lee y escribe etiquetas NFC solo cuando acercas una. El contenido de la etiqueta permanece en tu dispositivo salvo que decidas enviar el nombre de una estación."
+            "value" : "Hex NFC lee y escribe etiquetas NFC solo cuando acercas una. El contenido de la etiqueta permanece en tu dispositivo salvo que actives la sincronización con iCloud o decidas enviar el nombre de una estación."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC lit et écrit les tags NFC uniquement lorsque vous en approchez un. Le contenu du tag reste sur votre appareil, sauf si vous choisissez d'envoyer un nom de station."
+            "value" : "Hex NFC lit et écrit les tags NFC uniquement lorsque vous en approchez un. Le contenu du tag reste sur votre appareil, sauf si vous activez la synchronisation iCloud ou choisissez d'envoyer un nom de station."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC は、あなたがタグをかざしたときにのみ NFC タグの読み書きを行います。タグの内容は、駅名を送信することを選んだ場合を除き、端末の外に出ることはありません。"
+            "value" : "Hex NFC は、あなたがタグをかざしたときにのみ NFC タグの読み書きを行います。タグの内容は、iCloud 同期をオンにした場合や駅名を送信することを選んだ場合を除き、端末の外に出ることはありません。"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Hex NFC lê e grava etiquetas NFC apenas quando você encosta uma. O conteúdo da etiqueta permanece no seu dispositivo, a menos que você opte por enviar o nome de uma estação."
+            "value" : "O Hex NFC lê e grava etiquetas NFC apenas quando você encosta uma. O conteúdo da etiqueta permanece no seu dispositivo, a menos que você ative a sincronização com o iCloud ou opte por enviar o nome de uma estação."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC 仅在你贴近标签时才读写 NFC 标签。标签内容不会离开本设备，除非你选择发送站点名称。"
+            "value" : "Hex NFC 仅在你贴近标签时才读写 NFC 标签。标签内容不会离开本设备，除非你开启 iCloud 同步或选择发送站点名称。"
           }
         }
       }
@@ -78,43 +78,43 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يستخدم Hex NFC الكاميرا لمسح رموز QR التي يمكنك تحويلها إلى سجلات NFC. وتُعالَج الصور داخل الجهاز."
+            "value" : "يستخدم Hex NFC الكاميرا لمسح رموز QR التي يمكنك تحويلها إلى سجلات NFC، ولقراءة البيانات في صفحة الصورة من جواز السفر. وتُعالَج الصور داخل الجهاز ولا تُحفظ."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC uses the camera to scan QR codes you can convert into NFC records. Frames are processed on-device."
+            "value" : "Hex NFC uses the camera to scan QR codes you can convert into NFC records and to read the details on a passport's photo page. Frames are processed on-device and never saved."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC usa la cámara para escanear códigos QR que puedes convertir en registros NFC. Las imágenes se procesan en el dispositivo."
+            "value" : "Hex NFC usa la cámara para escanear códigos QR que puedes convertir en registros NFC y para leer los datos de la página de la fotografía de un pasaporte. Las imágenes se procesan en el dispositivo y nunca se guardan."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC utilise la caméra pour scanner des codes QR que vous pouvez convertir en enregistrements NFC. Les images sont traitées sur l'appareil."
+            "value" : "Hex NFC utilise la caméra pour scanner des codes QR que vous pouvez convertir en enregistrements NFC, et pour lire les informations de la page photo d'un passeport. Les images sont traitées sur l'appareil et ne sont jamais enregistrées."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC は、NFC レコードに変換できる QR コードを読み取るためにカメラを使用します。映像は端末内で処理されます。"
+            "value" : "Hex NFC は、NFC レコードに変換できる QR コードの読み取りと、パスポートの写真ページの情報の読み取りにカメラを使用します。映像は端末内で処理され、保存されることはありません。"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Hex NFC usa a câmera para ler códigos QR que você pode converter em registros NFC. As imagens são processadas no próprio dispositivo."
+            "value" : "O Hex NFC usa a câmera para ler códigos QR que você pode converter em registros NFC e para ler os dados da página com a foto de um passaporte. As imagens são processadas no próprio dispositivo e nunca são salvas."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex NFC 使用相机扫描可转换为 NFC 记录的二维码。画面在设备本地处理。"
+            "value" : "Hex NFC 使用相机扫描可转换为 NFC 记录的二维码，以及读取护照照片页上的信息。画面在设备本地处理，绝不会被保存。"
           }
         }
       }

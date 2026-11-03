@@ -10,6 +10,14 @@ body:
     validations:
       required: true
   - type: input
+    id: version
+    attributes:
+      label: Hex NFC version
+      description: Shown beside Version in the app's Settings, with the build number in brackets.
+      placeholder: "e.g. 1.0.2"
+    validations:
+      required: true
+  - type: input
     id: chip
     attributes:
       label: Tag chip (if relevant)
@@ -24,12 +32,12 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Expected vs actual behavior
+      label: Expected vs actual behaviour
     validations:
       required: true
   - type: textarea
     id: diagnostics
     attributes:
-      label: Diagnostic payload
-      description: Long-press the in-app error and tap "Copy diagnostics". Paste here.
+      label: Diagnostics
+      description: On the error screen, open Diagnostics and copy the text inside it (tap it on a scan or Operations error, or press and hold to select it on a write error). Paste it here.
       render: text

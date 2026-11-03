@@ -189,7 +189,7 @@ struct SavePresetSheet: View {
             onSaved()
             dismiss()
         } catch {
-            self.error = "Could not save: \(error.localizedDescription)"
+            self.error = String(localized: "Could not save: \(error.localizedDescription)")
         }
     }
 

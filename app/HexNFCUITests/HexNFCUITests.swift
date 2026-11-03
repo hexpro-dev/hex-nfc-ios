@@ -17,8 +17,55 @@ final class HexNFCUITests: XCTestCase {
     @MainActor
     func test_appLaunches() {
         let app = XCUIApplication()
-        app.launchArguments += ["--useSimulatedNFC"]
+        app.launchArguments += ["--useSimulatedNFC", "--noReviewPrompt"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["Hex NFC"].waitForExistence(timeout: 5))
+        // The header is one element with the link trait and its children hidden
+        // from accessibility, so the wordmark is not a static text of its own.
+        let header = app.descendants(matching: .any)["Hex NFC by Hex Pro"]
+        XCTAssertTrue(header.waitForExistence(timeout: 5))
+    }
+
+    /// The review card, shown by `--reviewPromptPreview` whatever has been
+    /// counted: it rises once Home has sat untouched, "Meh." swaps in the
+    /// feedback offer, and "Hide" takes the card away.
+    @MainActor
+    func test_reviewCard_mehThenHide() {
+        let app = XCUIApplication()
+        app.launchArguments += ["--useSimulatedNFC", "--reviewPromptPreview"]
+        app.launch()
+        let card = app.descendants(matching: .any)["reviewPrompt.card"]
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "the card rises after ten untouched seconds")
+
+        app.buttons["reviewPrompt.meh"].tap()
+        XCTAssertTrue(app.buttons["reviewPrompt.sendFeedback"].waitForExistence(timeout: 5))
+
+        app.buttons["reviewPrompt.hide"].tap()
+        XCTAssertTrue(card.waitForNonExistence(timeout: 5))
+    }
+
+    /// Scan a tag that carries a record and land in the editor's record list.
+    @MainActor
+    func test_scanOpensEditorWithRecords() {
+        let app = XCUIApplication()
+        app.launchArguments += ["--useSimulatedNFC", "--noReviewPrompt"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Scan"].waitForExistence(timeout: 5))
+        app.staticTexts["Scan"].tap()
+        let row = app.descendants(matching: .any)["editor.row.uri"]
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
+    /// Build from scratch: the same editor sheet, presented empty and with no
+    /// sheet dismissing ahead of it.
+    @MainActor
+    func test_buildOpensEmptyEditor() {
+        let app = XCUIApplication()
+        app.launchArguments += ["--useSimulatedNFC", "--noReviewPrompt"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Build"].waitForExistence(timeout: 5))
+        app.staticTexts["Build"].tap()
+        XCTAssertTrue(app.staticTexts["Empty tag"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.state, .runningForeground)
     }
 }

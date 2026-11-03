@@ -153,11 +153,15 @@ final class ChipIdentificationTests: XCTestCase {
         XCTAssertEqual(ChipCatalog.identify(type4Version: firstFrame)?.id, .ntag424DNA)
     }
 
-    func testType4VersionRejectsDESFire() {
-        // DESFire's HW type is 0x01, not 0x04 (it also arrives via its own
-        // family) — it must not be mistaken for an NTAG424 DNA.
+    func testType4VersionDecodesDESFireAsDESFire() {
+        // DESFire's HW type is 0x01, not 0x04, so it must never be mistaken for
+        // an NTAG424 DNA. It is decoded as the DESFire it is: a card set up for
+        // NDEF reaches this path once the NDEF AID is declared, and Remove NDEF
+        // setup has to recognise it there.
         let desfire = Data([0x04, 0x01, 0x01, 0x33, 0x00, 0x18, 0x05, 0x91, 0xAF])
-        XCTAssertNil(ChipCatalog.identify(type4Version: desfire))
+        let profile = ChipCatalog.identify(type4Version: desfire)
+        XCTAssertEqual(profile?.id, .mifareDESFireEV3)
+        XCTAssertEqual(profile?.memoryLayout.byteCount, 4096)
     }
 
     func testType4VersionRejectsRawRejectStatus() {

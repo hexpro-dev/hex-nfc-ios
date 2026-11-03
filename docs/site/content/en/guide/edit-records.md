@@ -24,12 +24,16 @@ Do either of the following:
 A tag or a build that holds nothing yet reads "Empty tag", with
 "Add a record to get started." underneath.
 
+:::figure[A build with no records reads "Empty tag", and **Add record** sits under the message.]
+![The Tag screen with no records. Protection reads Off, Write is dimmed, and the lower half reads Empty tag above a blue Add record button.](../../../assets/tag-editor--empty.png)
+:::
+
 ## Add a record
 
 ::::steps
 :::step[Open the record picker]
 On the Tag screen, tap **Add record**. It sits at the end of the record list, or
-in the middle of the screen when the tag holds nothing. The Add record screen
+under "Empty tag" when the tag holds nothing. The Add record screen
 opens with one tile for each type you can add.
 :::
 
@@ -81,6 +85,10 @@ Do any of the following on the Tag screen:
   records are written to the tag.
 - To delete a record, swipe left on its row and tap **Delete**. Swiping the row
   all the way across deletes it without that second tap.
+
+:::figure[The records are listed in the order they are written, with **Add record** at the end of the list.]
+![The Tag screen holding three records, URL, Text and Phone, each row ending in a three-line glyph. An Add record row closes the list.](../../../assets/tag-editor--record-list.png)
+:::
 
 A record you delete here is gone from the list, not from the tag. The tag keeps
 what it had until the next write, so a list you emptied by mistake costs you

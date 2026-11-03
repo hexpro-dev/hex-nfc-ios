@@ -38,7 +38,8 @@ iPhone".
 Hold the card flat against the back of your iPhone, near its top edge. Keep
 both still until the screen reads "Tag detected", which is the read finishing.
 Where nothing happens after a few seconds, move the card a little and hold it
-again. To stop instead, tap **Cancel**. That takes you back to the home screen.
+again. To stop instead, tap Cancel on the iOS scan sheet. That takes you back to the
+home screen.
 Left alone with no card against it, the read ends by itself and the screen
 reads "No tag found" with **Try again** under it.
 :::

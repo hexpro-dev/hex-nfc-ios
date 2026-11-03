@@ -29,6 +29,26 @@ struct HomeView: View {
             .padding(.bottom, HexTokens.Spacing.xxl)
         }
         .toolbar {
+            // Leading, so it sits opposite the gear: top left in a
+            // left-to-right language, top right in Arabic. The haptic rather
+            // than `hexPressStyle`, which on iOS 26 squeezes a text label into
+            // the gear's round glass and truncates it. An `HStack`, not a
+            // `Label`: from iOS 26 a toolbar shows a `Label` as its icon alone
+            // and ignores `.labelStyle(.titleAndIcon)`.
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    UIApplication.shared.open(DocumentationLink.current)
+                } label: {
+                    HStack(spacing: HexTokens.Spacing.xs) {
+                        Image(systemName: "questionmark.circle")
+                            .accessibilityHidden(true)
+                        Text("Docs")
+                    }
+                }
+                .foregroundStyle(HexTokens.Color.textSecondary)
+                .hexPressHaptic()
+                .accessibilityAddTraits(.isLink)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: onSettings) {
                     Image(systemName: "gearshape")

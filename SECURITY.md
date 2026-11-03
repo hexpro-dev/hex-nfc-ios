@@ -28,7 +28,9 @@ disclosure timeline:
 
 ## Privacy
 
-Hex NFC does not collect telemetry, analytics, or user data. The privacy
-manifest (`PrivacyInfo.xcprivacy`) is committed in-tree and is the
-source of truth. If you find a network call we haven't documented in
-the README's "Privacy" section, that is a security issue. Please report it.
+Hex NFC has no analytics or telemetry. The only personal information it can
+send to Hex Pro is what a user chooses to put in a feedback message. Section 6
+of [`PRIVACY.md`](PRIVACY.md) describes every request the app makes, and the
+privacy manifest (`app/HexNFC/PrivacyInfo.xcprivacy`) is committed in-tree. If
+you find a network request that section 6 does not describe, that is a
+security issue. Please report it.

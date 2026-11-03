@@ -1,0 +1,104 @@
+{
+	"catalogue": 1,
+	"rigs": {
+		"ntag213": {
+			"chip": "NTAG213",
+			"prepare": "text-record",
+			"description": "A formatted, unprotected NTAG213 under the top of the phone. Its contents are overwritten with Text records, and any protection a shot adds is removed before the run moves on."
+		},
+		"no-tag": {
+			"description": "Nothing under the phone: lift it off the tag. For the states an NFC sheet shows while it waits."
+		},
+		"system-reduce-motion": {
+			"description": "No tag needed. Turn on iOS Settings > Accessibility > Motion > Reduce Motion first, and off again afterwards."
+		},
+		"ultralight-c": {
+			"chip": "MIFARE Ultralight C",
+			"description": "A MIFARE Ultralight C, read and configured but never locked."
+		},
+		"ultralight-ev1-blank": {
+			"chip": "MIFARE Ultralight EV1",
+			"description": "A MIFARE Ultralight EV1 that has never been formatted. The run only reads it, so it stays blank for the next language."
+		},
+		"mock": {
+			"description": "No tag needed. The app runs on its simulated NFC session, for the one state none of the tags on hand can produce."
+		},
+		"ntag213-sacrificial": {
+			"chip": "NTAG213",
+			"requiresSacrificeUID": true,
+			"description": "An NTAG213 that may be locked for good. It is locked the first time and only scanned after that, so one tag serves every language."
+		},
+		"ultralight-c-sacrificial": {
+			"chip": "MIFARE Ultralight C",
+			"requiresSacrificeUID": true,
+			"description": "A MIFARE Ultralight C that will be locked for good. Its one shot is taken in English only, so one tag in all."
+		},
+		"desfire-ev3-throwaway": {
+			"chip": "MIFARE DESFire",
+			"requiresSacrificeUID": true,
+			"description": "The throwaway MIFARE DESFire EV3, left set up for NDEF. The run removes the setup and formats the card again, so it ends set up as it began. Every shot changes the card, so every shot checks its UID against --sacrifice-uid. The Dangerous Actions grid needs no tag and rides along."
+		}
+	},
+	"shots": {
+		"home--four-tiles.png": { "rig": "ntag213", "tier": "read-only", "order": 100 },
+		"library-history--empty.png": { "rig": "ntag213", "tier": "read-only", "order": 105 },
+		"home--development-costs-card.png": { "rig": "ntag213", "tier": "read-only", "order": 110 },
+		"home--promo-card.png": { "rig": "ntag213", "tier": "read-only", "order": 115 },
+		"settings--default.png": { "rig": "ntag213", "tier": "read-only", "order": 120 },
+		"settings--sync-section.png": { "rig": "ntag213", "tier": "read-only", "order": 125 },
+		"legal-terms--top.png": { "rig": "ntag213", "tier": "read-only", "order": 130 },
+		"advanced-console--idle.png": { "rig": "ntag213", "tier": "read-only", "order": 200 },
+		"advanced-console--identified.png": { "rig": "ntag213", "tier": "read-only", "order": 210 },
+		"advanced-console--run-finished.png": { "rig": "ntag213", "tier": "read-only", "order": 220 },
+		"advanced-console--all-nfc-traffic.png": { "rig": "ntag213", "tier": "read-only", "order": 230 },
+		"add-record--grid.png": { "rig": "ntag213", "tier": "read-only", "order": 300 },
+		"qr-import--permission-prompt.png": { "rig": "ntag213", "tier": "read-only", "order": 305 },
+		"record-editor--location-coordinates.png": { "rig": "ntag213", "tier": "read-only", "order": 310 },
+		"record-editor--wifi.png": { "rig": "ntag213", "tier": "read-only", "order": 315 },
+		"tag-editor--empty.png": { "rig": "ntag213", "tier": "read-only", "order": 320 },
+		"tag-editor--url-record.png": { "rig": "ntag213", "tier": "read-only", "order": 325 },
+		"tag-editor--record-list.png": { "rig": "ntag213", "tier": "read-only", "order": 330 },
+		"protection-card--type2-advanced.png": { "rig": "ntag213", "tier": "read-only", "order": 335 },
+		"protection-config--type2-advanced.png": { "rig": "ntag213", "tier": "read-only", "order": 340 },
+		"save-preset--protection-section.png": { "rig": "ntag213", "tier": "read-only", "order": 345 },
+		"write-sheet--write-failed.png": { "rig": "ntag213", "tier": "read-only", "order": 350 },
+		"library--presets-list.png": { "rig": "ntag213", "tier": "read-only", "order": 355 },
+		"operations--dangerous-actions.png": { "rig": "desfire-ev3-throwaway", "tier": "read-only", "order": 400 },
+		"operations-permanent-lock--idle.png": { "rig": "ntag213", "tier": "read-only", "order": 405 },
+		"operations-remove-password--idle-warning.png": { "rig": "ntag213", "tier": "read-only", "order": 410 },
+		"operations-attempt-limit--form.png": { "rig": "ntag213", "tier": "read-only", "order": 415 },
+		"operations-memory-dump--reading.png": { "rig": "ntag213", "tier": "read-only", "order": 420, "systemUI": true },
+		"operations-memory-dump--done-with-share.png": { "rig": "ntag213", "tier": "read-only", "order": 425 },
+		"operations-erase--confirmation.png": { "rig": "ntag213", "tier": "read-only", "order": 430 },
+		"operations-permanent-lock--uid-gate.png": { "rig": "ntag213", "tier": "read-only", "order": 435 },
+		"operations-format--already-formatted.png": { "rig": "ntag213", "tier": "read-only", "order": 440 },
+		"write-sheet--done.png": { "rig": "ntag213", "tier": "rewrites-tag", "order": 500, "systemUI": true },
+		"scan-sheet--tag-detected.png": { "rig": "ntag213", "tier": "rewrites-tag", "order": 505, "systemUI": true },
+		"tag-editor--records.png": { "rig": "ntag213", "tier": "rewrites-tag", "order": 510 },
+		"library--preset-swipe-leading.png": { "rig": "ntag213", "tier": "rewrites-tag", "order": 520 },
+		"library-history--list.png": { "rig": "ntag213", "tier": "rewrites-tag", "order": 530 },
+		"operations-protect-with-password--fields.png": { "rig": "ntag213", "tier": "protects-tag", "order": 600 },
+		"operations-protect-with-password--uid-confirmation.png": { "rig": "ntag213", "tier": "protects-tag", "order": 605 },
+		"tag-screen--protection-write-only.png": { "rig": "ntag213", "tier": "protects-tag", "order": 610 },
+		"protection-config--removal-footer.png": { "rig": "ntag213", "tier": "protects-tag", "order": 615 },
+		"operations--error.png": { "rig": "ntag213", "tier": "protects-tag", "order": 620 },
+		"write-sheet--needs-unlock.png": { "rig": "ntag213", "tier": "protects-tag", "order": 625 },
+		"write--confirm-remove-protection.png": { "rig": "ntag213", "tier": "protects-tag", "order": 630 },
+		"operations-remove-password--factory-default-offer.png": { "rig": "ntag213", "tier": "protects-tag", "order": 635 },
+		"operations-remove-password--done.png": { "rig": "ntag213", "tier": "protects-tag", "order": 640 },
+		"scan-sheet--protected.png": { "rig": "ntag213", "tier": "protects-tag", "order": 650 },
+		"operations-attempt-limit--readout.png": { "rig": "ntag213", "tier": "protects-tag", "order": 660 },
+		"operations-attempt-limit--verified.png": { "rig": "ntag213", "tier": "protects-tag", "order": 670 },
+		"scan-sheet--polling.png": { "rig": "no-tag", "tier": "read-only", "order": 100, "systemUI": true },
+		"write-sheet--polling.png": { "rig": "no-tag", "tier": "read-only", "order": 110, "systemUI": true },
+		"settings--system-reduce-motion.png": { "rig": "system-reduce-motion", "tier": "read-only", "order": 100 },
+		"protection-config--ultralight-c-key.png": { "rig": "ultralight-c", "tier": "read-only", "order": 100 },
+		"tag--not-formatted.png": { "rig": "ultralight-ev1-blank", "tier": "read-only", "order": 100 },
+		"operations-memory-dump--unsupported-chip.png": { "rig": "mock", "tier": "read-only", "order": 100 },
+		"tag-editor-protection--permanently-locked.png": { "rig": "ntag213-sacrificial", "tier": "irreversible", "order": 100 },
+		"operations-permanent-lock--lock-written.png": { "rig": "ultralight-c-sacrificial", "tier": "irreversible", "order": 100 },
+		"operations-remove-ndef-setup--removed.png": { "rig": "desfire-ev3-throwaway", "tier": "rewrites-tag", "order": 100 },
+		"tag--not-set-up-for-ndef.png": { "rig": "desfire-ev3-throwaway", "tier": "rewrites-tag", "order": 110 },
+		"operations-format--ndef-set-up.png": { "rig": "desfire-ev3-throwaway", "tier": "rewrites-tag", "order": 120 }
+	}
+}

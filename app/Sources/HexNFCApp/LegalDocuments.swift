@@ -36,7 +36,10 @@ enum LegalDocument: String, CaseIterable, Identifiable {
 
     /// Shown under the title, and part of the document's version identity.
     var effectiveDate: String {
-        "7 July 2026"
+        switch self {
+        case .terms: "31 October 2026"
+        case .privacy: "31 October 2026"
+        }
     }
 
     var publisherLine: String {
@@ -98,11 +101,13 @@ extension LegalDocument {
             "Do not use the app to break the law, to read or modify tags, cards, or documents you are not authorised to access, to infringe anyone's rights, or to disrupt or abuse the small online services the app talks to.",
             "We may change, suspend, or retire those online services at any time. The core of the app works fully offline.",
         ]),
-        LegalSection(heading: "10. Station-name suggestions", paragraphs: [
+        LegalSection(heading: "10. Suggestions and feedback", paragraphs: [
             "If you submit a station name, you grant us a perpetual, worldwide, royalty-free licence to use, edit, publish, and redistribute the suggestion, including bundling it into future versions of the app and its data files. Submit only information you are entitled to share, and do not include personal information in the name field.",
+            "If you send us feedback from the app, we may use it to answer you and to improve the app, without any obligation to you. Do not include personal information about anyone else in a feedback message.",
         ]),
         LegalSection(heading: "11. Third-party services", paragraphs: [
             "Optional iCloud sync is provided by Apple under Apple's own terms and privacy policy. Banners and links in the app may open external websites, which have their own terms.",
+            "If you tap an NFC health device, such as an insulin pen, the app shows what kind of device it is and may link to an app made by another company that reads it. Hex NFC reads no measurements from the device, gives no medical information or advice, and is not a medical device.",
         ]),
         LegalSection(heading: "12. No warranty", paragraphs: [
             "The app is provided \u{201C}as is\u{201D} and \u{201C}as available\u{201D}, without warranties of any kind beyond those the law requires.",
@@ -135,16 +140,17 @@ extension LegalDocument {
 extension LegalDocument {
     private static let privacySections: [LegalSection] = [
         LegalSection(heading: "1. The short version", paragraphs: [
-            "Hex NFC has no accounts, no analytics, no advertising trackers, and nothing to sell. What you scan stays on your device. The app makes exactly three kinds of internet request, none of which carries personal information, and all of which are described below.",
+            "Hex NFC has no accounts, no analytics, no advertising trackers, and nothing to sell. What you scan stays on your device. The app makes four kinds of internet request, all described below. Three of them carry no personal information. The fourth is a feedback message, which is sent only when you write one and tap Send, and carries only what the form shows you.",
         ]),
         LegalSection(heading: "2. What stays on your device", paragraphs: [
             "\u{2022} Scan history and saved presets live in a local database on your device.",
-            "\u{2022} App settings (haptics, motion, compatibility mode, sync) are stored locally.",
+            "\u{2022} App settings (haptics, motion, sync) are stored locally.",
+            "\u{2022} The app occasionally asks how you are finding it. Whether it has asked, how you answered, and a count of recent scans and writes that decides when it may ask are stored on your device. They are never synced or sent.",
             "\u{2022} Tag passwords you set or use are stored only in the iOS Keychain on this device. They are never synced, never included in exported files, and never sent anywhere.",
             "Deleting an item in the app removes it from the local database. Deleting the app removes the app's local data from your device.",
         ]),
         LegalSection(heading: "3. Electronic passports", paragraphs: [
-            "When you read a passport or identity document, the chip's contents (including name, date of birth, and photo) are shown on screen for that session only. Nothing from a passport is ever saved, synced, exported, or transmitted. The keys needed to talk to the chip are derived on your device from the document's machine-readable zone and are discarded when the session ends.",
+            "When you read a passport or identity document, the chip's contents (including name, date of birth, and photo) are shown on screen for that session only. Nothing from a passport is ever saved, synced, exported, or transmitted. The keys needed to talk to the chip are derived on your device from the document's machine-readable zone and are discarded when the session ends. If you choose to scan the photo page with the camera instead of typing those details, the camera image is examined on your device only to find them, and no image is saved or transmitted.",
         ]),
         LegalSection(heading: "4. Transit cards", paragraphs: [
             "Transit cards are read-only. The balance and trip information shown comes straight from the card. Like other scans, a transit read is kept in your local scan history so you can reopen it later; it stays on your device unless you turn on iCloud sync.",
@@ -153,19 +159,18 @@ extension LegalDocument {
             "If you turn on iCloud sync, your presets and scan history are mirrored into your private iCloud database, which is operated by Apple and protected by your Apple ID. We cannot read it. Turning sync off stops the mirroring, and deleting items removes them from sync. Tag passwords are never synced.",
         ]),
         LegalSection(heading: "6. When the app talks to the internet", paragraphs: [
-            "There are exactly three cases. None of them runs in the background, and none carries anything that identifies you.",
+            "There are exactly four cases. None of them runs in the background. The first three carry nothing that identifies you; the fourth carries only what you choose to send.",
             "\u{2022} Development-costs figure. The home screen fetches one public number (contributions received versus project cost) from our API at api.apps.hex.pro. The request contains no personal data.",
             "\u{2022} Station-name suggestions. Sent only when you tap Submit. The payload is the numeric line, station, and area codes, the card system code, and the station name you typed. Your card's serial number, balance, and travel history are never sent. Suggestions are reviewed by the maintainer and treated as anonymous; please do not put personal information in the name field.",
             "\u{2022} Hex Pro app banner. The home screen may show a banner for another Hex Pro app. Fetching it sends this app's bundle identifier, the platform (\u{201C}ios\u{201D}), and a slot name to our API at api.p.hex.pro, and returns an image or video that is cached on your device. There are no third-party ad networks, no tracking identifiers, and no personalisation: everyone sees the same banner.",
-            "Like every internet request, these necessarily expose your IP address to our servers. We keep only standard, short-lived operational logs and do not use IP addresses to identify or profile anyone.",
+            "\u{2022} Feedback. Sent only when you write a message in the feedback form and tap Send. It contains your message, the email address you entered if you chose to give one, and the app version, iOS version, device model and app language, which the form shows you before you send. It goes to our API at api.hex.pro and is delivered to our feedback inbox. We use it to read and answer your message and to fix problems, never for marketing, and keep it for up to 24 months. Nothing from your tags, scans or history is included.",
+            "Like every internet request, these necessarily expose your IP address to our servers. We keep only standard, short-lived operational logs and do not use IP addresses to identify or profile anyone. A feedback message is stored with a keyed hash of your IP address, used only to limit how many messages one connection can send, and the hash is erased within seven days.",
         ]),
         LegalSection(heading: "7. Device permissions", paragraphs: [
             "Every permission is optional, and everything captured is processed on your device:",
             "\u{2022} NFC: used only while a scan or write sheet is open.",
-            "\u{2022} Camera: only for scanning QR codes you choose to import. Frames are never saved or uploaded.",
-            "\u{2022} Contacts: only when you pick a contact to build a record. The picked details go onto your tag, not to us.",
-            "\u{2022} Location: only when you tap \u{201C}use current location\u{201D} while building a map record.",
-            "\u{2022} Bluetooth: only when you choose a device while building a Bluetooth handover record.",
+            "\u{2022} Camera: only for scanning QR codes you choose to import, and for reading a passport's photo page when you choose to scan it. Frames are never saved or uploaded.",
+            "The app does not ask for access to your contacts, your location or Bluetooth.",
         ]),
         LegalSection(heading: "8. What we never do", paragraphs: [
             "No analytics or telemetry SDKs. No third-party advertising. No fingerprinting. No selling, renting, or sharing of personal information. No accounts, and no profile of you anywhere on our servers.",
@@ -177,10 +182,10 @@ extension LegalDocument {
             "Files you export or share contain the records and presets you selected. They never include tag passwords.",
         ]),
         LegalSection(heading: "11. Children", paragraphs: [
-            "The app is not directed at children, and we knowingly collect no personal information from anyone, children included.",
+            "The app is not directed at children, and we do not knowingly collect personal information from children. The only personal information the app can send us is what you choose to put in a feedback message.",
         ]),
         LegalSection(heading: "12. Your rights", paragraphs: [
-            "Because almost nothing about you ever reaches us, most privacy requests can be satisfied on your own device by deleting items or the app. For anything involving our servers (for example, a station suggestion you regret submitting), contact us and we will help. You can also complain to the Office of the Australian Information Commissioner or your local data-protection authority.",
+            "Because almost nothing about you ever reaches us, most privacy requests can be satisfied on your own device by deleting items or the app. For anything involving our servers (for example, a station suggestion you regret submitting, or a feedback message you want deleted), contact us and we will help. You can also complain to the Office of the Australian Information Commissioner or your local data-protection authority.",
         ]),
         LegalSection(heading: "13. Changes to this policy", paragraphs: [
             "When this policy changes, the new version appears here with a new effective date.",

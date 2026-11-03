@@ -8,6 +8,12 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @State private var activeLegalDocument: LegalDocument?
+    @State private var showingFeedback = false
+    @Environment(\.openURL) private var openURL
+
+    /// The App Store's own review page for the app. The storefront-neutral
+    /// form, so it opens in the reader's own store.
+    private static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6801457461?action=write-review")
 
     var body: some View {
         NavigationStack {
@@ -58,7 +64,7 @@ struct SettingsSheet: View {
                     // promotion in the app" line, because the development-costs
                     // card on Home links out to a page that takes money.
                     Text(
-                        "Hex NFC is free and source-available, with no analytics and no accounts. What you scan stays on your device. The home screen may show a banner for another Hex Pro app. There is no third-party ad network, no tracking and no personalisation behind it: everyone sees the same banner. See the Privacy Policy for the few things the app fetches over the network."
+                        "Hex NFC is free and source-available, with no analytics and no accounts. What you scan stays on your device, and in your own iCloud if you turn on sync. The home screen may show a banner for another Hex Pro app. There is no third-party ad network, no tracking and no personalisation behind it: everyone sees the same banner. The Privacy Policy lists the few times the app talks to Hex Pro over the network."
                     )
                     .font(HexTokens.Font.body)
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
@@ -73,6 +79,23 @@ struct SettingsSheet: View {
                         }
                         .accessibilityElement(children: .combine)
                     }
+                    actionRow("Send Feedback", systemImage: "chevron.right") {
+                        showingFeedback = true
+                    }
+                    .accessibilityHint(Text("Opens a form to send a message to Hex Pro."))
+                    .accessibilityIdentifier("settings.sendFeedback")
+                    actionRow("Rate Hex NFC", systemImage: "arrow.up.right") {
+                        // Someone who went looking for the review page is
+                        // treated as having reviewed, so the card never asks
+                        // them. iOS gives an app no way to know for sure.
+                        model.reviewPrompt.answer(.loved)
+                        if let url = Self.writeReviewURL {
+                            openURL(url)
+                        }
+                    }
+                    .accessibilityHint(Text("Opens the App Store."))
+                    .accessibilityAddTraits(.isLink)
+                    .accessibilityIdentifier("settings.rate")
                 }
                 Section(header: Text("Legal")) {
                     legalRow(.terms)
@@ -93,6 +116,28 @@ struct SettingsSheet: View {
             .preferredColorScheme(.dark)
             .sheet(item: $activeLegalDocument) { document in
                 LegalSheet(document: document)
+            }
+            .sheet(isPresented: $showingFeedback) {
+                FeedbackSheet()
+            }
+        }
+    }
+
+    /// A row that does one thing when tapped, drawn like the legal rows.
+    private func actionRow(
+        _ title: LocalizedStringKey,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                    .foregroundStyle(HexTokens.Color.textPrimary)
+                Spacer()
+                Image(systemName: systemImage)
+                    .font(HexTokens.Font.footnote)
+                    .foregroundStyle(HexTokens.Color.textSecondary)
+                    .accessibilityHidden(true)
             }
         }
     }

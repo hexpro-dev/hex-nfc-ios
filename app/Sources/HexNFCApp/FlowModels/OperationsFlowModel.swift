@@ -31,6 +31,10 @@ public final class OperationsFlowModel {
     public enum Operation: Hashable, Sendable {
         case erase
         case format
+        /// Return a MIFARE DESFire that Format set up to blank: the factory
+        /// master key, presented once, then FormatPICC. Refused on any card
+        /// whose only application is not this app's own NDEF setup.
+        case removeNDEFSetup
         case permanentLock
         /// Apply protection in one family-agnostic operation. The settings plus
         /// the secret to **write**, which is the same `PendingProtection` the
@@ -115,6 +119,17 @@ public final class OperationsFlowModel {
         /// claimed a write that never happened, on the one page in the app that
         /// only ever gets one write.
         case formatted(alreadyFormatted: Bool)
+        /// Format on a MIFARE DESFire: the NDEF application was created and read
+        /// back the way a reader reads it.
+        case ndefApplicationCreated
+        /// Format on a DESFire already set up the way this app sets one up.
+        /// Nothing was written.
+        case ndefAlreadySetUp
+        /// Remove NDEF setup: FormatPICC was sent and the card read back blank.
+        case ndefSetupRemoved
+        /// Remove NDEF setup on a card with no applications. Nothing was sent
+        /// that changes it.
+        case alreadyBlank
         /// `verified` is `false` when the lock was written but this tap could not
         /// witness it. That is not a failure and not a doubt about the write: on
         /// MIFARE Ultralight C the lock bytes are "valid upon the next REQA or
@@ -258,6 +273,8 @@ public final class OperationsFlowModel {
     /// for, and that type was not on this path. A defaulted in-memory store would
     /// have let it come back silently.
     private let credentials: TagCredentialLedger
+    /// Told how each operation ended, for the review prompt.
+    private let activity: TagActivityRecording?
     private var currentSession: TagSession?
     /// Resumed with `true` when the typed-UID gate is satisfied and `false` when
     /// the run is cancelled, so the suspended `begin()` learns which happened.
@@ -292,9 +309,11 @@ public final class OperationsFlowModel {
         factory: TagSessionFactory,
         operation: Operation,
         credentials: TagCredentialStoring,
-        earlierRunMayHaveTouchedATag: Bool = false
+        earlierRunMayHaveTouchedATag: Bool = false,
+        activity: TagActivityRecording? = nil
     ) {
         self.factory = factory
+        self.activity = activity
         self.operation = operation
         self.credentials = TagCredentialLedger(credentials)
         contact = TagContact(mayHaveTouchedATag: earlierRunMayHaveTouchedATag)
@@ -386,8 +405,15 @@ public final class OperationsFlowModel {
     /// and a SLIX2's state cannot be established on an identify tap at all
     /// because the probe is a write. A state-driven rule would hide the field on
     /// exactly the tags that need it.
+    ///
+    /// One exception: a tag with no protection style at all. Neither the chip
+    /// nor tap 1's reading gave it a backend, so there is no credential shape to
+    /// collect and nothing this app could present. Asking anyway shut the gate
+    /// for good, because `confirm()` waits for a credential the screen has no
+    /// way to take. Erase on an NDEF-formatted DESFire stopped there. Such a tag
+    /// that turns out to be gated refuses tap 2's write, which says so.
     public var requiresUnlockCredential: Bool {
-        guard let reading else { return false }
+        guard let reading, reading.style != nil else { return false }
         if let state = reading.protection, !state.passwordProtect {
             return false
         }
@@ -480,7 +506,9 @@ public final class OperationsFlowModel {
     /// and tested rather than implied.
     var mayPresentTheFactoryDefault: Bool {
         switch operation {
-        case .setAttemptLimit:
+        // Nothing to swap: a DESFire has no protection backend, so this run
+        // never holds a credential, and the key it presents is fixed.
+        case .setAttemptLimit, .removeNDEFSetup:
             false
 
         case .erase, .format, .permanentLock, .enableProtection, .disableProtection, .memoryDump:
@@ -913,7 +941,7 @@ public final class OperationsFlowModel {
         confirmationContinuation?.resume(returning: false)
         confirmationContinuation = nil
         Task { [currentSession] in
-            await currentSession?.invalidate(error: "Cancelled.")
+            await currentSession?.invalidate(error: String(localized: "Cancelled."))
         }
         currentSession = nil
         connectedTag = nil
@@ -1039,7 +1067,13 @@ public final class OperationsFlowModel {
             return .erased
 
         case .format:
+            if tag.chip?.ndefDependsOnCard == true {
+                return try await setUpDESFireNDEFApplication(on: tag)
+            }
             return try await .formatted(alreadyFormatted: formatCC(on: tag))
+
+        case .removeNDEFSetup:
+            return try await removeDESFireNDEFSetup(on: tag)
 
         case .permanentLock:
             // Kept rather than discarded: the outcome is the only per-region
@@ -1279,6 +1313,13 @@ public final class OperationsFlowModel {
             publish(records: [])
 
         case .format:
+            // A DESFire's setup was read back inside the driver, with the ISO
+            // commands iOS's reader sends, before it returned. That reading is
+            // what these two facts stand on.
+            if tag.chip?.ndefDependsOnCard == true {
+                publish(formatted: true, ndefAccess: .readWrite)
+                return summary
+            }
             // The Type-2 OTP page is read back inside `formatCC`, where the CC
             // bytes are in scope and a mismatch can name them. Type-5 keeps its
             // CC in an ordinary rewritable block, so verify it here.
@@ -1298,6 +1339,12 @@ public final class OperationsFlowModel {
             // immediately above. So the editor's "this tag isn't formatted"
             // notice can stop saying it.
             publish(formatted: true)
+
+        case .removeNDEFSetup:
+            // The driver read the card back with no applications before it
+            // returned, or found it that way to begin with: no NDEF application,
+            // so no records either.
+            publish(records: [], ndefAccess: .notSupported)
 
         case .permanentLock:
             // Ask the chip whether it now refuses writes, rather than believing
@@ -1472,109 +1519,6 @@ public final class OperationsFlowModel {
         }
     }
 
-    /// Writes the Capability Container. Returns `true` when the tag already
-    /// carried the correct CC and nothing was written.
-    @discardableResult
-    private func formatCC(on tag: ConnectedTag) async throws -> Bool {
-        // Each family keeps its Capability Container somewhere different, so
-        // dispatch on the family rather than on `.memoryWrite` alone — a SLIX
-        // advertises `.memoryWrite` but its CC is a block, not a page, and the
-        // page writer would refuse it with a misleading "not a Type-2/MIFARE tag".
-        switch tag.chip?.family {
-        case .type2:
-            // Factory CC bytes are the single source of truth on `ChipProfile`,
-            // shared with the console presets and the chip simulators.
-            //
-            // An unidentified Type-2 chip must **refuse**, never fall back. This
-            // previously defaulted to the smallest CC (`E1 10 06 00`, 48 B) on
-            // the theory that guessing low is conservative. It is not: page 3 is
-            // OTP, so the write ORs bits into whatever is already there and can
-            // never clear them. Writing a 48-byte CC to a 144-byte chip either
-            // permanently under-declares two thirds of its NDEF area, or, if a
-            // CC is already present, ORs into it and produces a size byte that
-            // belongs to no chip at all (0x12 | 0x06 = 0x16, declaring 176 bytes
-            // of a 144-byte tag). There is exactly one attempt per tag, so a
-            // guess here is unrecoverable in a way that an error is not.
-            guard let cc = tag.chip?.factoryCC else {
-                throw TagError.capabilityUnsupported(
-                    .formatCC,
-                    diagnostics: "Type-2 CC needs a known chip profile; this tag identified as "
-                        + "\(tag.chip?.id.description ?? "unidentified") with no factory CC. "
-                        + "Page 3 is OTP, so a guessed size byte cannot be undone."
-                )
-            }
-            try tag.require(.memoryWrite)
-            // CC lives at page 3 on Type-2 chips, and page 3 is **OTP**: writes
-            // OR bits in and can never clear them. So read it first and refuse
-            // outright unless it is still blank.
-            //
-            // Without this guard, formatting an already-formatted tag ORs the
-            // factory CC into whatever is there. Identical bytes make that a
-            // no-op, which is why it survives the common case — but a tag
-            // carrying a foreign CC, or one whose chip we misidentified, gets a
-            // size byte belonging to no chip (`0x12 | 0x06 = 0x16`, declaring
-            // 176 B of a 144-byte tag) and there is no second attempt. The
-            // DEBUG `formatVirginCC` op has always had this check; the shipping
-            // path, which is the one users actually reach, did not.
-            let existingCC = try await tag.readMemory(range: 12 ..< 16)
-            if Type2CC.isFormatted(existingCC) {
-                // Already formatted. Two very different cases hide here, and
-                // the old code treated both as "just write it again":
-                //
-                // • Identical bytes — the overwhelmingly common one, since most
-                //   NTAG21x ship pre-formatted. ORing identical bits changes
-                //   nothing, so skip the write entirely rather than spend the
-                //   tag's one OTP shot re-asserting what is already true.
-                // • Different bytes — a foreign CC, or a chip we misidentified.
-                //   Here the OR genuinely corrupts: `0x12 | 0x06 = 0x16`
-                //   declares 176 B of a 144-byte tag, and page 3 can never be
-                //   corrected. Refuse.
-                guard existingCC == cc else {
-                    throw TagError.protocolError(
-                        String(localized: "This tag already has a different Capability Container."),
-                        diagnostics: "page 3 = \(existingCC.hexString), would OR \(cc.hexString) into it: "
-                            + "OTP bits cannot be cleared, so this would corrupt the CC permanently"
-                    )
-                }
-                return true
-            }
-            try await tag.writeMemory(at: 12, bytes: cc)
-            // Read the OTP page back. This is the one write in the app that can
-            // never be retried or corrected, so an ACK alone is not proof.
-            let writtenCC = try await tag.readMemory(range: 12 ..< 16)
-            guard writtenCC == cc else {
-                throw TagError.verificationFailed(
-                    diff: writtenCC,
-                    diagnostics: "CC read-back mismatch: wrote \(cc.hexString), page 3 now reads \(writtenCC.hexString)"
-                )
-            }
-            return false
-
-        case .type5:
-            // Type-5 keeps its CC in block 0 and, unlike Type-2, blocks stay
-            // rewritable until explicitly locked — so this is recoverable. This
-            // is the path a factory ICODE SLIX2 needs: it ships with no CC, and
-            // without one CoreNFC refuses every content NDEF write against it.
-            guard let cc = tag.chip?.factoryType5CC else {
-                throw TagError.capabilityUnsupported(
-                    .formatCC,
-                    diagnostics: "Type-5 CC needs known block geometry; profile reports "
-                        + "\(tag.chip?.memoryLayout.pageCount ?? 0) × \(tag.chip?.memoryLayout.pageSize ?? 0) B"
-                )
-            }
-            try tag.require(.rawTransceive)
-            try await Type5Formatter(transceive: { try await tag.transceive($0) }).format(cc: cc)
-            // Type-5 blocks are rewritable, so the formatter always writes.
-            return false
-
-        default:
-            throw TagError.capabilityUnsupported(
-                .formatCC,
-                diagnostics: "CC format unsupported on chip family \(tag.chip?.family.shortName ?? "unknown")"
-            )
-        }
-    }
-
     private func dumpMemory(on tag: ConnectedTag) async throws -> Data {
         try tag.require(.memoryRead)
         // Bounded by what the chip will actually answer, not by how much memory
@@ -1619,12 +1563,13 @@ public final class OperationsFlowModel {
         lock: TagLockReading? = nil,
         formatted: Bool? = nil,
         ndefReadable: Bool? = nil,
-        records: [NDEFRecord]? = nil
+        records: [NDEFRecord]? = nil,
+        ndefAccess: NDEFAccess? = nil
     ) {
         guard let subject = uid ?? operatedUID else { return }
         let latest = TagObservation(
             uid: subject, protection: protection, lock: lock,
-            formatted: formatted, ndefReadable: ndefReadable, records: records
+            formatted: formatted, ndefReadable: ndefReadable, records: records, ndefAccess: ndefAccess
         )
         observation = observation?.merging(latest) ?? latest
     }
@@ -1652,5 +1597,32 @@ public final class OperationsFlowModel {
     private func transition(to newPhase: Phase) {
         phase = newPhase
         transitionCount &+= 1
+        if let outcome = activity(for: newPhase) {
+            activity?.record(outcome)
+        }
+    }
+
+    /// How a phase counts toward the review prompt, or `nil` when it is not
+    /// the end of an operation. A memory dump changes nothing on the tag, so it
+    /// counts as the read it is. A partial permanent lock arrives as `.error`
+    /// and counts as the failure it is reported as.
+    func activity(for phase: Phase) -> TagActivity? {
+        switch phase {
+        case .done(let summary):
+            if case .memoryDumped = summary {
+                return .read
+            }
+            return .changedTag
+
+        case .error:
+            return .failed
+
+        case .needsUnlock:
+            return unlockFailed || unlockRefusal != nil ? .failed : nil
+
+        case .idle, .identifying, .polling, .connected, .awaitingConfirmation, .executing,
+             .verifying, .cancelled, .noTagFound:
+            return nil
+        }
     }
 }

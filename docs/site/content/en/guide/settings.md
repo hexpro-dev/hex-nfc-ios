@@ -8,10 +8,14 @@ tags:
 ---
 
 Hex NFC has three settings, and they share one screen with the app's version
-number and its legal documents. On the Hex NFC home screen, tap the gear button
+number, a way to send feedback or rate the app, and its legal documents. On the Hex NFC home screen, tap the gear button
 in the top right; it carries no word, and VoiceOver reads it as **Settings**.
 The sheet that opens is titled **Settings**. The groups below run in the order
 the screen shows them.
+
+:::figure[The **Settings** sheet opens on **Feel** and **Sync**, with every switch at its default.]
+![The Settings sheet with Done at the top right. Haptics is on, and Reduce Motion and iCloud sync are off.](../../../assets/settings--default.png)
+:::
 
 ## Feel
 
@@ -19,7 +23,7 @@ the screen shows them.
 | Setting | What it does | Default |
 | :--- | :--- | :--- |
 | **Haptics** | Vibrates your iPhone during a scan, a write and the other moments the app marks. Turning it off stops those vibrations at once. | On |
-| **Reduce Motion** | Cuts back the app's animations. The app reduces motion when this switch or your iPhone's own Reduce Motion setting is on, so turning this one off does not undo the system setting. | Off |
+| **Reduce Motion** | Cuts back the app's animations. :more[The app reduces motion when this switch or your iPhone's own Reduce Motion setting is on, so turning this one off does not undo the system setting.] | Off |
 :::
 
 While your iPhone's own Reduce Motion is on, a line under the row reads
@@ -39,7 +43,7 @@ row says as much. Closing it means quitting the app. Going back to the iPhone's
 Home Screen leaves Hex NFC running, and the switch you moved keeps doing
 nothing.
 
-### Turn on iCloud sync
+### Turn on iCloud sync {#turn-on-icloud-sync}
 
 ::::steps
 :::step[Open Settings]
@@ -63,7 +67,7 @@ sync did not start; see [When sync does not start](#when-sync-does-not-start).
 :::
 ::::
 
-### Close and reopen the app
+### Close and reopen the app {#close-and-reopen-the-app}
 
 ::::steps
 :::step[Close Hex NFC]
@@ -84,7 +88,7 @@ iCloud already holds. Another iPhone signed in to the same account keeps
 everything it has received. What stops is the flow of new changes from this
 one.
 
-### When sync does not start
+### When sync does not start {#when-sync-does-not-start}
 
 If the switch is on and iCloud was out of reach when the app started, sync does
 not start. A second line appears under the row: "Sync is not running. Your
@@ -116,7 +120,7 @@ settles it.
 Leave **iCloud sync** on and follow
 [Close and reopen the app](#close-and-reopen-the-app), then tap the gear button
 on the home screen. A second paragraph still under **iCloud sync** means sync
-did not start again.
+still has not started.
 :::
 ::::
 
@@ -132,12 +136,43 @@ banner. For the few things the app fetches over the network, read
 Under that paragraph, **Version** shows the app's version number followed by
 its build number in brackets.
 
+## Feedback and ratings {#feedback-and-ratings}
+
+**Send Feedback**, below **Version**, opens a form for a message to Hex Pro.
+
+1. Type what is not right, or what could be better, in the message box.
+2. To get an answer, put your email address under **Reply address
+   (optional)**. Leave it empty and the message goes without one.
+3. Check the list under **Sent with your message**. It shows the app version,
+   iOS version, device model and language that go with your message. Nothing
+   from your tags, scans or history is sent.
+4. Tap **Send** in the top right.
+
+The form thanks you once the message is on its way. If it cannot reach Hex Pro,
+it keeps what you typed and offers **Email us instead**, which opens your mail
+app with the message and the same details filled in.
+
+**Rate Hex NFC** opens the app's page on the App Store, where you can give it a
+rating or write a review.
+
+Now and then the home screen asks **Loving Hex NFC?** in a card along its
+bottom edge. It appears only after a few successful writes or protection
+changes, or after reading a transit card or a whole passport, and only when
+nothing in your recent scans failed. It waits until the home screen has sat
+untouched for ten seconds, comes back at most once a month, and never covers
+anything you need: the screen above it still scrolls and every button works.
+
+Tap **Love it!** and Apple's rating sheet appears, when iOS chooses to show it.
+Tap **Meh.** and the card offers **Send Feedback** instead. Either answer is
+final, and the card does not ask again. **Hide** puts it away for a month, and
+opening anything from the home screen while it is up does the same.
+
 ## Legal
 
 **Terms & Conditions** and **Privacy Policy** each open the full document in a
-reading card that you scroll and then close with **Done**. Both cards carry the
-same two lines above the first heading, "Effective 7 July 2026" and "Ars Vitae
-Pty Ltd, trading as Hex Pro (Australia)". Both documents are in English,
+reading card that you scroll and then close with **Done**. Each card carries
+two lines above the first heading: the date that version took effect, and "Ars
+Vitae Pty Ltd, trading as Hex Pro (Australia)". Both documents are in English,
 whatever language the rest of the app is in.
 
 The Terms answer what the app costs, in the section headed "3. The app is

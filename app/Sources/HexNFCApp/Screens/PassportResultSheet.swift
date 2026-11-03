@@ -38,7 +38,7 @@ struct PassportResultSheet: View {
                 .padding(HexTokens.Spacing.l)
             }
             .background(HexTokens.Color.surface0.ignoresSafeArea())
-            .navigationTitle(Text("Passport"))
+            .navigationTitle(Text(navigationTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -64,6 +64,7 @@ struct PassportResultSheet: View {
             issuingState: passport.issuingState,
             surname: passport.primaryIdentifier,
             givenNames: passport.secondaryIdentifier,
+            fullName: heroFullName,
             secondaryFields: heroFields,
             mrzLines: mrzLines,
             statusBadge: integrityBadge
@@ -73,20 +74,47 @@ struct PassportResultSheet: View {
         .accessibilityIdentifier("passport.hero")
     }
 
+    /// China's travel permits answer as eMRTDs but are not passports, and
+    /// their DG1 carries no name, nationality or sex (see `MRZParser`).
+    private var isPermit: Bool {
+        passport.mrzLayout == .chineseTravelPermit
+    }
+
     private var passportTypeLabel: String {
-        passport.documentType.uppercased().hasPrefix("P")
+        if isPermit {
+            return String(localized: "Travel permit")
+        }
+        return passport.documentType.uppercased().hasPrefix("P")
             ? String(localized: "Passport")
             : passport.documentType
     }
 
+    private var navigationTitle: LocalizedStringKey {
+        isPermit ? "Travel permit" : "Passport"
+    }
+
+    private var documentNumberLabel: LocalizedStringKey {
+        isPermit ? "Permit No." : "Passport No."
+    }
+
+    /// DG11's full name stands in on the page when the MRZ gave no name at all.
+    private var heroFullName: String? {
+        guard passport.primaryIdentifier.isEmpty, passport.secondaryIdentifier.isEmpty else { return nil }
+        return passport.biographical?.fullName
+    }
+
+    /// Fields DG1 did not carry are left off rather than shown as "n/a".
     private var heroFields: [PassportBookletHero.Field] {
-        [
-            .init(label: "Passport No.", value: passport.documentNumber),
-            .init(label: "Nationality", value: passport.nationality),
-            .init(label: "Date of birth", value: formattedMRZDate(passport.dateOfBirth, isExpiry: false)),
-            .init(label: "Sex", value: sexText),
-            .init(label: "Date of expiry", value: formattedMRZDate(passport.dateOfExpiry, isExpiry: true)),
+        let fields: [(label: LocalizedStringKey, value: String)] = [
+            (documentNumberLabel, passport.documentNumber),
+            ("Nationality", passport.nationality),
+            ("Date of birth", formattedMRZDate(passport.dateOfBirth, isExpiry: false)),
+            ("Sex", sexText),
+            ("Date of expiry", formattedMRZDate(passport.dateOfExpiry, isExpiry: true)),
         ]
+        return fields
+            .filter { !$0.value.isEmpty }
+            .map { PassportBookletHero.Field(label: $0.label, value: $0.value) }
     }
 
     private var mrzLines: [String] {
@@ -107,17 +135,19 @@ struct PassportResultSheet: View {
     // MARK: - MRZ card
 
     private var mrzCard: some View {
-        card(title: "Passport details") {
+        card(title: isPermit ? "Permit details" : "Passport details") {
             row("Surname", passport.primaryIdentifier)
             row("Given names", passport.secondaryIdentifier)
-            row("Passport No.", passport.documentNumber)
+            row(documentNumberLabel, passport.documentNumber)
             row("Nationality", passport.nationality)
             row("Issuing state", passport.issuingState)
             row("Date of birth", formattedMRZDate(passport.dateOfBirth, isExpiry: false))
             row("Sex", sexText)
             row("Date of expiry", formattedMRZDate(passport.dateOfExpiry, isExpiry: true))
             if !passport.optionalData.isEmpty {
-                row("Optional data", passport.optionalData)
+                // A permit's optional data is the holder's Hong Kong, Macao or
+                // Taiwan identity number (see `MRZParser`).
+                row(isPermit ? "Personal number" : "Optional data", passport.optionalData)
             }
         }
     }
@@ -239,8 +269,11 @@ struct PassportResultSheet: View {
 
     // MARK: - Derived values
 
+    /// Empty when DG1 has no sex field at all, so the row drops; `<` and `X`
+    /// are the MRZ's own "unspecified".
     private var sexText: String {
         switch passport.sex.uppercased() {
+        case "": ""
         case "M": String(localized: "Male")
         case "F": String(localized: "Female")
         default: String(localized: "Unspecified")
@@ -273,31 +306,9 @@ struct PassportResultSheet: View {
         )
     }
 
-    /// Format a `YYMMDD` MRZ date for display. Two-digit MRZ years are inherently
-    /// ambiguous: expiry is always 20YY; a date of birth is in the past, so a
-    /// candidate 20YY that lands in the future rolls back to 19YY. This ages with
-    /// the calendar (no hardcoded pivot) and never shows a future birth date.
+    /// Format a `YYMMDD` MRZ date for display (see `PassportMRZDate`).
     private func formattedMRZDate(_ yymmdd: String, isExpiry: Bool) -> String {
-        guard yymmdd.count == 6, let yy = Int(yymmdd.prefix(2)),
-              let mm = Int(yymmdd.dropFirst(2).prefix(2)),
-              let dd = Int(yymmdd.suffix(2)) else { return yymmdd }
-        let calendar = Calendar(identifier: .gregorian)
-        let year: Int
-        if isExpiry {
-            year = 2000 + yy
-        } else {
-            let currentYear = calendar.component(.year, from: Date())
-            let candidate = 2000 + yy
-            year = candidate > currentYear ? candidate - 100 : candidate
-        }
-        var components = DateComponents()
-        components.year = year
-        components.month = mm
-        components.day = dd
-        guard let date = calendar.date(from: components) else { return yymmdd }
-        // Device-locale, localized abbreviated-month formatting (respects the
-        // project's localization invariant — no hardcoded en_US_POSIX pattern).
-        return date.formatted(.dateTime.day().month(.abbreviated).year())
+        PassportMRZDate.display(yymmdd, isExpiry: isExpiry)
     }
 }
 #endif

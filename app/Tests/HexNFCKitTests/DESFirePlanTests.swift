@@ -1,4 +1,5 @@
 @testable import HexNFCKit
+import HexNFCRecords
 import HexNFCTagSim
 import HexNFCTestKit
 import XCTest
@@ -46,13 +47,40 @@ final class DESFirePlanTests: XCTestCase {
         let executed = report.results.filter { $0.status == .passed }.map(\.id)
         XCTAssertEqual(
             Set(executed),
-            ["df.identify", "df.version", "df.selectNDEFApp", "df.appIDs", "df.freeMemory", "df.ndefProbe"],
+            [
+                "df.identify",
+                "df.version",
+                "df.selectNDEFApp",
+                "df.appIDs",
+                "df.freeMemory",
+                "df.ndefProbe",
+                "df.factoryKeyAuth",
+            ],
             "unexpected step set\n\(report.plainTextLog)"
         )
         XCTAssertTrue(
             report.results.allSatisfy { $0.status != .skipped },
             "nothing should be skipped on a chip that advertises rawTransceive"
         )
+    }
+
+    /// `df.factoryKeyAuth` presents the factory key exactly once to a blank
+    /// card, and never to a transit card.
+    func test_factoryKeyStep_presentsTheKeyOnlyWhereRemoveWould() async throws {
+        let blank = DESFireEV3Simulator()
+        let blankProfile = try XCTUnwrap(blank.profile)
+        let blankReport = await TagTestRunner(plan: TagTestPlan.plan(for: blankProfile))
+            .run(using: SimulatedSession(chip: blank))
+        XCTAssertTrue(blankReport.passed, blankReport.plainTextLog)
+        XCTAssertEqual(blank.authenticationAttempts, 1)
+        XCTAssertEqual(blank.violations, [])
+
+        let transit = DESFireEV3Simulator.personalised()
+        let transitProfile = try XCTUnwrap(transit.profile)
+        let transitReport = await TagTestRunner(plan: TagTestPlan.plan(for: transitProfile))
+            .run(using: SimulatedSession(chip: transit))
+        XCTAssertTrue(transitReport.passed, transitReport.plainTextLog)
+        XCTAssertEqual(transit.authenticationAttempts, 0, "a transit card never sees an authentication")
     }
 
     // MARK: - Chained GET_VERSION
@@ -180,5 +208,104 @@ final class DESFirePlanTests: XCTestCase {
                 "opcode \(String(format: "%02X", opcode)) should be PERMISSION_DENIED"
             )
         }
+    }
+
+    // MARK: - NDEF support belongs to the card
+
+    /// The tag card said "Raw commands" for every DESFire, including one that
+    /// had been set up as an NDEF tag and was showing its records on the same
+    /// screen. The card's own answer now supplies Read and Write.
+    func test_ndefFormattedCard_gainsReadAndWriteFromTheCard() async throws {
+        let message = try NDEFCodec.encode([.text(TextRecord(text: "hello"))])
+        let tag = try await SimulatedSession(chip: DESFireEV3Simulator.ndefFormatted(message: message))
+            .start(alert: "")
+        XCTAssertEqual(tag.capabilities, [.rawTransceive], "nothing is claimed before the card is asked")
+
+        let read = try await tag.readNDEF()
+
+        XCTAssertEqual(try NDEFCodec.decode(read).count, 1)
+        XCTAssertEqual(tag.capabilities, [.ndefRead, .ndefWrite, .rawTransceive])
+    }
+
+    func test_readOnlyNDEFCard_gainsReadAlone() async throws {
+        let tag = try await SimulatedSession(chip: DESFireEV3Simulator.ndefFormatted(isWritable: false))
+            .start(alert: "")
+
+        let access = try await tag.queryNDEFAccess()
+
+        XCTAssertEqual(access, .readOnly)
+        XCTAssertEqual(tag.capabilities, [.ndefRead, .rawTransceive])
+    }
+
+    /// A factory card answers "not supported", and the declared set stands.
+    func test_factoryCard_staysRawOnlyAfterTheRefusedRead() async throws {
+        let tag = try await SimulatedSession(chip: DESFireEV3Simulator()).start(alert: "")
+        _ = try? await tag.readNDEF()
+        XCTAssertEqual(tag.capabilities, [.rawTransceive])
+    }
+
+    /// The write is refused before any of it reaches the card, as an
+    /// unsupported operation rather than the lost tag iOS's own writer reports.
+    func test_factoryCard_refusesAWriteAsUnsupported() async throws {
+        let simulator = DESFireEV3Simulator()
+        let tag = try await SimulatedSession(chip: simulator).start(alert: "")
+        do {
+            try await tag.writeNDEF([.text(TextRecord(text: "hello"))])
+            XCTFail("a DESFire with no NDEF application should refuse the write")
+        } catch let error as TagError {
+            XCTAssertEqual(error.kind, .capabilityUnsupported(.ndefWrite))
+        }
+        XCTAssertNil(simulator.ndefApplication)
+    }
+
+    func test_readOnlyNDEFCard_refusesAWriteAndKeepsItsMessage() async throws {
+        let message = try NDEFCodec.encode([.text(TextRecord(text: "kept"))])
+        let simulator = DESFireEV3Simulator.ndefFormatted(message: message, isWritable: false)
+        let tag = try await SimulatedSession(chip: simulator).start(alert: "")
+        do {
+            try await tag.writeNDEF([.text(TextRecord(text: "replaced"))])
+            XCTFail("a read-only NDEF file should refuse the write")
+        } catch let error as TagError {
+            XCTAssertEqual(error.kind, .capabilityUnsupported(.ndefWrite))
+        }
+        XCTAssertEqual(simulator.ndefApplication?.message, message)
+    }
+
+    func test_ndefFormattedCard_writeRoundTrips() async throws {
+        let tag = try await SimulatedSession(chip: DESFireEV3Simulator.ndefFormatted()).start(alert: "")
+        let records: [NDEFRecord] = [.uri(URIRecord(uri: "https://hex.pro"))]
+
+        try await tag.writeNDEF(records)
+        let readBack = try await tag.readNDEF()
+
+        XCTAssertEqual(readBack, try NDEFCodec.encode(records))
+    }
+
+    /// The live suite has to pass on an NDEF card as well as on a blank or
+    /// transit one, and `df.ndefProbe` now checks the capabilities it gained.
+    func test_plan_passesOnAnNDEFFormattedCard() async throws {
+        let message = try NDEFCodec.encode([.text(TextRecord(text: "hello"))])
+        let simulator = DESFireEV3Simulator.ndefFormatted(message: message)
+        let profile = try XCTUnwrap(simulator.profile)
+
+        let report = await TagTestRunner(plan: TagTestPlan.plan(for: profile))
+            .run(using: SimulatedSession(chip: simulator))
+
+        XCTAssertTrue(report.passed, "NDEF-formatted card should pass\n\(report.plainTextLog)")
+        XCTAssertTrue(report.isCleanPass, "not a clean pass\n\(report.footer)")
+    }
+
+    /// The card's answer only counts for a chip whose NDEF support belongs to
+    /// the card. An NTAG213 that iOS cannot read is a damaged NTAG213, and it
+    /// keeps the Read and Write its datasheet gives it.
+    func test_cardAnswer_isIgnoredForAChipTheCatalogDeclares() throws {
+        let ntag = try XCTUnwrap(NTAG213Simulator().profile)
+        XCTAssertFalse(ntag.ndefDependsOnCard)
+        XCTAssertEqual(
+            TagCapability.resolved(declared: ntag.capabilities, chip: ntag, ndefAccess: .notSupported),
+            ntag.capabilities
+        )
+        let ntag424 = try XCTUnwrap(ChipCatalog.profile(for: .ntag424DNA))
+        XCTAssertFalse(ntag424.ndefDependsOnCard, "every 424 ships with its NDEF application")
     }
 }

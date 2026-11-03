@@ -36,6 +36,9 @@ struct TagIdentifier: Sendable {
         /// it deliberately does not live here: only the session knows how many
         /// passes this tap has already spent.
         var verdict: Type2ProbeVerdict = .answered
+        /// The association request read off a personal health device, carried
+        /// to the connected tag for the result view. `nil` for every other tag.
+        var healthDevice: PHDAssociation?
     }
 
     func identify(_ tag: NFCTag) async -> Result {
@@ -64,7 +67,8 @@ struct TagIdentifier: Sendable {
             return Result(profile: FeliCaTagIdentifier().identify(felica), report: nil)
 
         case .iso7816(let iso):
-            return await Result(profile: ISO7816TagIdentifier().identify(iso), report: nil)
+            let identified = await ISO7816TagIdentifier().identify(iso)
+            return Result(profile: identified.profile, report: nil, healthDevice: identified.healthDevice)
 
         @unknown default:
             return Result(profile: nil, report: nil)

@@ -26,12 +26,15 @@ enumerates what we protect against and what we don't.
   to `api.apps.hex.pro`. That request carries nothing else from the card:
   not its IDm, its balance or its transaction list.
 - `PrivacyInfo.xcprivacy` declares no tracking and no collected data types,
-  and the station-name suggestion above is not listed in it. The app makes
-  three other network requests, and none carries anything read from a tag:
-  the home screen fetches a development-costs figure from
-  `api.apps.hex.pro`, asks `api.p.hex.pro` for a banner for another Hex Pro
-  app, and downloads the image or video that response names. A network
-  request this page does not describe is a security bug.
+  and neither the station-name suggestion above nor a feedback message is
+  listed in it. The app makes four other network requests, and none carries
+  anything read from a tag: the home screen fetches a development-costs
+  figure from `api.apps.hex.pro`, asks `api.p.hex.pro` for a banner for
+  another Hex Pro app, and downloads the image or video that response names;
+  and the feedback form, only when the user taps Send, posts the typed
+  message, an optional reply address, and the app version, iOS version,
+  device model and app language to `api.hex.pro`. A network request this
+  page does not describe is a security bug.
 - Every command the app itself sends to a tag, and the tag's reply, is also
   written to the iPhone's system log (subsystem `pro.hex.nfc`, category
   `apdu`), marked `.public` so the system does not redact it. This happens in
@@ -76,7 +79,7 @@ enumerates what we protect against and what we don't.
   leaves these records alone, and the app has no control for removing one: a
   record is deleted only when a read-back after a removal shows the tag open
   and back on its factory credential. No code yet reads a record back to
-  unlock a tag. A password typed on the Operations sheet is not saved
+  unlock a tag. A password typed on the Operations screen is not saved
   anywhere.
 - Only the non-secret *settings* (such as which page protection starts at
   and, for NTAG21x, Ultralight EV1 and NTAG424 DNA, whether it gates writes
@@ -94,8 +97,10 @@ enumerates what we protect against and what we don't.
   directory, and the app deletes neither: a shared preset's `.hexnfc` file,
   and a memory dump's `.bin` file, which is written as soon as the dump
   finishes, whether or not it is shared.
-- An electronic passport is read only after the user types the document
-  number, date of birth and expiry date from its machine-readable zone. The
+- An electronic passport is read only after the user enters the document
+  number, date of birth and expiry date from its machine-readable zone, by
+  typing them or by scanning the photo page with the camera, which reads the
+  printed lines on the device and keeps no image. The
   app does not save those details, or anything it reads from the passport,
   including the face image, to scan history or any other app storage, and
   sends none of it over the network. The result is shown for that session
@@ -103,15 +108,27 @@ enumerates what we protect against and what we don't.
 
 ### Destructive operation safety
 
-- On the Operations sheet, six operations require the user to type the
-  tag's full UID before they run: Erase, Format, Permanent lock, Attempt
-  limit, Protect with password and Remove password. The last three are for
-  NTAG21x and Ultralight EV1 only; protection on NTAG424 DNA, Ultralight C
-  and ICODE SLIX2 is set and removed from the Protection card in the tag
-  editor. It is typed confirmation, not Yes/No: the UID shown beside the
+- On the Operations screen, seven operations require the user to type the
+  tag's full UID before they run: Erase, Format, Remove NDEF setup, Permanent
+  lock, Attempt limit, Protect with password and Remove password. Attempt
+  limit is for NTAG21x and Ultralight EV1 only. Protect with password and
+  Remove password cover every chip the app can protect (NTAG21x, Ultralight
+  EV1, Ultralight C, NTAG424 DNA and ICODE SLIX2), and the Protection card in
+  the tag editor can protect and unprotect the same chips. It is typed confirmation, not Yes/No: the UID shown beside the
   field is the one read by the first of two taps, and a second tap that
   presents a different tag is refused.
-- Outside the Operations sheet, nothing in a release build has that gate.
+- Remove NDEF setup sends FormatPICC, which deletes every application on a
+  MIFARE DESFire card. It authenticates once per tap with the published
+  factory DES master key, and only after the same tap has shown that the
+  card's sole application has this app's NDEF structure and that its master
+  key is DES at version 00. Format and Remove NDEF setup refuse a card that
+  holds any other application, such as a transit or access card, before they
+  send anything that changes it.
+- A tag recognised as an NFC health device is sent no write, Erase or console
+  command: its profile carries only `.personalHealthDevice`, and
+  `refuseIfHealthDevice` refuses NDEF writes, memory writes and raw commands
+  before a frame is sent. The scan is never saved to History.
+- Outside the Operations screen, nothing in a release build has that gate.
   Protection applied or removed from the editor's Protection card runs as
   part of the next write, and so does the protection in a preset written from
   the Library; removing it still needs the tag's current password or key. An
@@ -154,8 +171,8 @@ enumerates what we protect against and what we don't.
 - The app never bypasses tag-side authentication. If a Type 2 tag refuses
   our PWD_AUTH, we surface the failure honestly and send no second password
   in that tap; we do not retry with a guess list. After Protect with password
-  or Remove password is refused, the Operations sheet offers a labelled
-  button that tries the published factory password on a fresh run, typed-UID
+  or Remove password is refused, the Operations screen offers a button,
+  **Try the factory default**, that tries the published factory password on a fresh run, typed-UID
   gate included. Nothing takes that step on its own, and on a tag with an
   attempt limit it counts as a wrong try if the factory password is not the
   one the tag holds. Protect with password, run on a tag that is already
@@ -163,23 +180,17 @@ enumerates what we protect against and what we don't.
   current one, so on a tag with an attempt limit that is a wrong try unless
   the tag already holds that password. A write that carries a password or
   key presents it before it writes anything. That covers a preset with a
-  stored secret and a write from the editor's Protection card. On NTAG21x and
-  Ultralight EV1 the app reads the tag's configuration first and sends no
-  password to a tag that reads as unprotected. On NTAG424 DNA, Ultralight C
-  and ICODE SLIX2 it presents the key or password whether the tag is
-  protected or not. On the card the value presented is the one just typed
+  stored secret and a write from the editor's Protection card. On every chip
+  the app can protect, it reads the tag's protection state first and sends no
+  password or key to a tag that reads as unprotected. On the Protection card, the value presented is the one just typed
   there, including a new password meant to replace the tag's current one, so
   on a tag with an attempt limit it counts as a wrong try whenever the tag
   holds a different one. The one automatic fallback is on NTAG424 DNA:
   applying or removing protection draws on at most three keys in one
   session (the current key supplied to the operation, the published all-zero
   factory key and, when applying, the new key). That limits the keys tried,
-  not the attempts. A write from the editor or a preset presents the
-  supplied key once before it writes. If the tag refuses it and then reads
-  as protected, the write presents the same key a second time in that tap
-  before it stops and asks for the tag's key. A factory-fresh tag reads as
-  unprotected, so the write goes on, and applying a new key to it is refused
-  twice before the factory key opens it. A key change that fails adds up to
+  not the attempts. A factory-fresh tag reads as unprotected, so a write sends
+  it no key before writing. A key change that fails adds up to
   two more attempts to learn which key the tag holds. We have not
   established whether that chip counts failed authentications.
 

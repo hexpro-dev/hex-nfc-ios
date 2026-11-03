@@ -53,6 +53,7 @@ public struct PassportBookletHero: View {
     private let issuingState: String
     private let surname: String
     private let givenNames: String
+    private let fullName: String?
     private let secondaryFields: [Field]
     private let mrzLines: [String]
     private let statusBadge: StatusBadge?
@@ -71,12 +72,16 @@ public struct PassportBookletHero: View {
         }
     }
 
+    /// `fullName` replaces the surname and given-names pair with one "Full
+    /// name" field, for a document whose MRZ carries no Latin name and whose
+    /// name comes from DG11 whole.
     public init(
         photo: Image?,
         documentTypeLabel: String,
         issuingState: String,
         surname: String,
         givenNames: String,
+        fullName: String? = nil,
         secondaryFields: [Field],
         mrzLines: [String],
         statusBadge: StatusBadge? = nil
@@ -86,6 +91,7 @@ public struct PassportBookletHero: View {
         self.issuingState = issuingState
         self.surname = surname
         self.givenNames = givenNames
+        self.fullName = fullName
         self.secondaryFields = secondaryFields
         self.mrzLines = mrzLines
         self.statusBadge = statusBadge
@@ -107,7 +113,7 @@ public struct PassportBookletHero: View {
         .shadow(color: .black.opacity(0.45), radius: 18, x: 0, y: 10)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("Passport data page"))
-        .accessibilityValue(Text(verbatim: "\(givenNames) \(surname)"))
+        .accessibilityValue(Text(verbatim: fullName ?? "\(givenNames) \(surname)"))
     }
 
     // MARK: - Header
@@ -154,8 +160,12 @@ public struct PassportBookletHero: View {
         HStack(alignment: .top, spacing: HexTokens.Spacing.l) {
             photoView
             VStack(alignment: .leading, spacing: HexTokens.Spacing.s) {
-                field(label: "Surname", value: surname, emphasised: true)
-                field(label: "Given names", value: givenNames, emphasised: true)
+                if let fullName {
+                    field(label: "Full name", value: fullName, emphasised: true)
+                } else {
+                    field(label: "Surname", value: surname, emphasised: true)
+                    field(label: "Given names", value: givenNames, emphasised: true)
+                }
                 if !secondaryFields.isEmpty {
                     // Two per row keeps the page compact like the real booklet.
                     let rows = stride(from: 0, to: secondaryFields.count, by: 2).map { i in

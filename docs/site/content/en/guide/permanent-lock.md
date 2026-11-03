@@ -47,53 +47,62 @@ only once what it holds is final.
 
 ::include[two-tap-confirmation]
 
-::::steps
-:::step[Scan the tag you want to lock]
-In Hex NFC, on the Hex NFC home screen, tap **Scan**, then hold the tag against
+:::::steps
+::::step[Scan the tag you want to lock]
+On the Hex NFC home screen, tap **Scan**, then hold the tag against
 the top of your iPhone. The **Tag** screen opens and shows what the tag holds.
 See [Scan a tag](scan-a-tag.md).
-:::
+::::
 
-:::step[Check the tag can be locked]
+::::step[Check the tag can be locked]
 On the Tag screen, look for "Lock" in the **Supports** row of the tag info card,
 and for the **Protection** card reading "Off". A chip that takes no password
 shows no **Protection** card, which is also fine.
-:::
+::::
 
-:::step[Open the Operations screen]
+::::step[Open the Operations screen]
 On the Tag screen, tap the menu button at the top right, beside
 **Write**, then tap **Operations…**.
-:::
+::::
 
-:::step[Choose Permanent lock]
+::::step[Choose Permanent lock]
 Scroll to **Dangerous Actions**, then tap **Permanent lock**. The screen that
-opens says what the lock costs and what it cannot undo. The tile is there for
-every tag, including chips that have no lock bits. The app checks the chip only
-on the second tap. On a chip that cannot be locked, it answers "This tag does
-not support that operation." once you have typed the UID. Nothing is written.
-:::
+opens says what the lock costs and that it cannot be undone. The tile is there for
+every tag, including chips that have no lock bits. The app checks the chip on
+the first tap. On a chip that cannot be locked, it answers "This tag does not
+support that operation." after that tap, before you type the UID. Nothing is
+written.
 
-:::step[Hold the tag for the first tap]
+:::figure[The **Permanent lock** screen opens with its warning, and nothing reaches the tag until you tap **Permanently lock this tag**.]
+![The Permanent lock screen at rest. A red-edged warning reads This is permanent, above a blue Permanently lock this tag button.](../../../assets/operations-permanent-lock--idle.png)
+:::
+::::
+
+::::step[Hold the tag for the first tap]
 Read the warning, then tap **Permanently lock this tag**. The screen reads "Tap
 1 of 2. Hold the tag to identify it.", so hold the tag against the top of your
 iPhone until the sheet closes.
-:::
+::::
 
-:::step[Type the tag's UID]
+::::step[Type the tag's UID]
 The tag's UID appears beside an empty field, under "Type this tag's UID to
-confirm.". It is shown in capitals with no colons or spaces, and all of it is
+confirm." It is shown in capitals with no colons or spaces, and all of it is
 typed. A UID the tag info card shows as `04:BA:4A:92:1B:21:90` appears here as
 `04BA4A921B2190`. Capitals and lower case both match, and a space before or
 after what you type is ignored. The button stays dimmed until what you type
 matches.
-:::
 
-:::step[Hold the tag for the second tap]
+:::figure[Between the two taps, the tag's UID sits on the left of an empty field, and **Permanently lock this tag** stays dimmed until you type it.]
+![The Permanent lock screen after the first tap. The UID 044C250A301F91 sits beside an empty field, above a dimmed Permanently lock this tag button and Cancel.](../../../assets/operations-permanent-lock--uid-gate.png)
+:::
+::::
+
+::::step[Hold the tag for the second tap]
 Tap **Permanently lock this tag** again, then hold the tag against the top of
 your iPhone. The screen reads "Tap 2 of 2. Hold the same tag again." while it
 waits, and reports the result when the tag comes away.
-:::
 ::::
+:::::
 
 ## What the app says when the lock lands
 
@@ -112,6 +121,10 @@ app has read back as locked. Under that sits "Records and formatting can no
 longer be written." Until that confirming scan it reads
 "Lock written · scan again to confirm" instead. **Write** is unavailable on a
 tag read back as locked.
+
+:::figure[After a confirming scan, the **Protection** card reads "Permanently locked" with "Records and formatting can no longer be written." under it.]
+![The Tag screen for an NTAG213, with Lock in its Supports row and the Protection card below reading Permanently locked.](../../../assets/tag-editor-protection--permanently-locked.png)
+:::
 
 A password stored on the tag survives the lock, and the card then reads
 "Permanently locked · password still set". The line underneath says whether that
@@ -135,7 +148,7 @@ app names rather than calling it a failure.
   the chip is spent. No second run completes the rest. Back on the Tag screen,
   the **Protection** card reads "Partly locked · some of this tag is read-only
   for good". A tag that still holds a password reads
-  "Partly locked · password still set" instead. On an NTAG or a MIFARE
+  "Partly locked · password still set" instead. On an NTAG21x or a MIFARE
   Ultralight, a fresh scan says the same again, because the app reads those lock
   bytes back. It does not re-read an ICODE SLIX2's per-block locks at scan time,
   so a fresh scan of one says nothing about the partial lock. On that chip the

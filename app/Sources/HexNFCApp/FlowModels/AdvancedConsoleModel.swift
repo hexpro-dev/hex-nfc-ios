@@ -97,7 +97,10 @@ public final class AdvancedConsoleModel {
             if lowered.isEmpty {
                 return true
             }
-            return preset.name.lowercased().contains(lowered)
+            // Both names: the one on screen, and the English one a datasheet
+            // or a forum post would use.
+            return preset.localizedName.lowercased().contains(lowered)
+                || preset.name.lowercased().contains(lowered)
                 || preset.sequenceText.lowercased().contains(lowered)
                 || (preset.notes ?? "").lowercased().contains(lowered)
         }
@@ -122,7 +125,7 @@ public final class AdvancedConsoleModel {
     /// Preset → input buffer. Doesn't run; user can review/edit then tap Run.
     public func loadPreset(_ preset: CommandPreset) {
         input = preset.sequenceText
-        appendNote("Loaded preset: \(preset.name)")
+        appendNote(String(localized: "Loaded preset: \(preset.localizedName)"))
     }
 
     /// Scan a tag purely to identify it, then prioritise chip-appropriate
@@ -136,9 +139,9 @@ public final class AdvancedConsoleModel {
 
         let session = factory.makeSession()
         currentSession = session
-        appendNote("Identifying tag…")
+        appendNote(String(localized: "Identifying tag…"))
         do {
-            let tag = try await session.start(alert: "Hold tag to identify.")
+            let tag = try await session.start(alert: String(localized: "Hold tag to identify."))
             contact.tagArrived()
             let chip = tag.chip
             let uidHex = tag.uid.hexString
@@ -146,7 +149,7 @@ public final class AdvancedConsoleModel {
             currentSession = nil
             if let chip {
                 identifiedChip = chip
-                appendNote("Identified: \(chip.displayName) · \(uidHex)")
+                appendNote(String(localized: "Identified: \(chip.displayName) · \(uidHex)"))
             } else {
                 identifiedChip = nil
                 // Say what the chip said about itself. The scan card already
@@ -154,13 +157,13 @@ public final class AdvancedConsoleModel {
                 // screen someone opens *because* a tag is behaving oddly — was
                 // the one place that threw it away and printed only "unknown".
                 if let report = tag.unidentifiedReport {
-                    appendNote("Tag connected but the chip is unknown · \(uidHex)")
+                    appendNote(String(localized: "Tag connected but the chip is unknown · \(uidHex)"))
                     if let summary = report.summary {
-                        appendNote("Reported: \(summary)")
+                        appendNote(String(localized: "Reported: \(summary)"))
                     }
                     appendNote("GET_VERSION: \(report.versionHex)")
                 } else {
-                    appendNote("Tag connected but the chip is unknown · \(uidHex)")
+                    appendNote(String(localized: "Tag connected but the chip is unknown · \(uidHex)"))
                 }
             }
         } catch let error as TagError {
@@ -183,7 +186,7 @@ public final class AdvancedConsoleModel {
             await session.invalidate(error: nil)
             currentSession = nil
             appendErrorEntry(
-                "Couldn't identify the tag.",
+                String(localized: "Couldn't identify the tag."),
                 diagnostics: "\(error)"
             )
         }
@@ -203,7 +206,7 @@ public final class AdvancedConsoleModel {
         guard phase == .idle || phase == .finished || phase == .noTagFound || isErrorPhase else { return }
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            appendError("Empty input.", diagnostics: "no commands to send")
+            appendError(String(localized: "Empty input."), diagnostics: "no commands to send")
             return
         }
         let sequence: RawCommandSequence
@@ -211,7 +214,7 @@ public final class AdvancedConsoleModel {
             sequence = try RawCommandSequence.parse(trimmed)
         } catch {
             appendError(
-                "Could not parse command.",
+                String(localized: "Could not parse command."),
                 diagnostics: "parse error: \(error)"
             )
             return
@@ -220,16 +223,20 @@ public final class AdvancedConsoleModel {
         let session = factory.makeSession()
         currentSession = session
         phase = .polling
-        appendNote("Polling for tag…")
+        appendNote(String(localized: "Polling for tag…"))
 
         do {
-            let tag = try await session.start(alert: "Hold tag for command.")
+            let tag = try await session.start(alert: String(localized: "Hold tag for command."))
             contact.tagArrived()
-            phase = .connected(
-                uidHex: tag.uid.hexString,
-                chip: tag.chip?.id.description ?? "unknown"
-            )
-            appendNote("Connected: \(tag.uid.hexString) · \(tag.chip?.id.description ?? "unknown")")
+            let chip = tag.chip?.id.description ?? String(localized: "unknown")
+            phase = .connected(uidHex: tag.uid.hexString, chip: chip)
+            appendNote(String(localized: "Connected: \(tag.uid.hexString) · \(chip)"))
+
+            // Refused here, before the loop logs a single TX line. The connected
+            // tag would refuse each command anyway, but only after the console
+            // had printed it as sent, and a TX row above "refused before any
+            // frame" reads as a command that reached an insulin pen.
+            try tag.refuseIfHealthDevice(.rawTransceive)
 
             phase = .running
             let bound = try sequence.bind(to: .init(uid: tag.uid))
@@ -252,7 +259,7 @@ public final class AdvancedConsoleModel {
             await session.invalidate(error: nil)
             currentSession = nil
             phase = .finished
-            appendNote("Done.")
+            appendNote(String(localized: "Done."))
         } catch let error as TagError {
             // The run never reached a tag, so not one command frame went out.
             // Say that, in a neutral line, and leave the status where a run
@@ -276,7 +283,7 @@ public final class AdvancedConsoleModel {
             await session.invalidate(error: nil)
             currentSession = nil
             appendError(
-                "Something unexpected went wrong.",
+                String(localized: "Something unexpected went wrong."),
                 diagnostics: "\(error)"
             )
         }
@@ -307,14 +314,17 @@ public final class AdvancedConsoleModel {
     private func appendRX(_ data: Data, for command: RawCommand) {
         entries.append(HexConsoleEntry(
             kind: .rx,
-            label: "\(data.count) bytes",
-            body: data.isEmpty ? "(empty)" : data.hexString
+            label: String(localized: "\(data.count) bytes"),
+            body: data.isEmpty ? String(localized: "(empty)") : data.hexString
         ))
     }
 
-    /// The log line for a session that ended with no tag. Localised, unlike
-    /// the console's older progress notes, because it is the whole of what the
-    /// user is told about a run that never started.
+    /// The log line for a session that ended with no tag, which is the whole
+    /// of what the user is told about a run that never started.
+    ///
+    /// Every line the console writes in its own words goes through the
+    /// catalogue. What the tag sent, and the command names and hex the user
+    /// typed, do not: they are the same bytes in every language.
     static func note(for ending: NoTagEnd) -> String {
         switch ending {
         case .cancelled:
@@ -341,8 +351,25 @@ public final class AdvancedConsoleModel {
     private func appendErrorEntry(_ message: String, diagnostics: String) {
         entries.append(HexConsoleEntry(
             kind: .error,
-            label: "ERROR",
+            label: String(localized: "ERROR"),
             body: "\(message): \(diagnostics)"
         ))
+    }
+}
+
+public extension CommandPreset {
+    /// The name the console shows. A built-in preset's English name is its key
+    /// in the string catalogue, and stays its identity everywhere else: tests,
+    /// search and the catalogue all know it by that. A preset the user named
+    /// keeps the name they gave it.
+    ///
+    /// Some names carry the only warning a preset has, because nothing renders
+    /// `notes`: "replaces all of CFG1", "ends the tap". A translation carries the
+    /// same warning, and `CommandPresetLocalisationTests` holds it to that.
+    var localizedName: String {
+        guard isBuiltIn else { return name }
+        // A runtime value, so `LocalizationValue.init(_:)`, not the literal
+        // initialiser the compiler extracts from.
+        return String(localized: String.LocalizationValue(name))
     }
 }

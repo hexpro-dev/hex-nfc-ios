@@ -88,10 +88,21 @@ extension OperationsFlowModel {
             // land, and reading lock bytes costs frames on the one operation
             // here that is recoverable if it fails. Tap 2's own write is the
             // cheaper answer.
+            //
+            // On a DESFire the capability is not known until the card is asked,
+            // because whether it has an NDEF application is up to the card. The
+            // question is iOS's own NDEF status query, the first thing its
+            // write would do anyway.
+            if tag.chip?.ndefDependsOnCard == true {
+                _ = try await tag.queryNDEFAccess()
+            }
             try tag.require(.ndefWrite)
 
         case .format:
-            try preflightFormat(on: tag, established)
+            try await preflightFormat(on: tag, established)
+
+        case .removeNDEFSetup:
+            try await preflightDESFireRemoval(on: tag)
 
         case .permanentLock:
             findings.lock = try await preflightPermanentLock(on: tag, established, gate)
@@ -161,7 +172,12 @@ extension OperationsFlowModel {
     /// answered on a gated tag exactly as it is on an open one, and a simulator
     /// taught to refuse it would be a simulator taught behaviour no trace has
     /// shown.
-    func preflightFormat(on tag: ConnectedTag, _ established: TagPreamble.Established) throws {
+    func preflightFormat(on tag: ConnectedTag, _ established: TagPreamble.Established) async throws {
+        // A DESFire has no Capability Container page. What Format would do to
+        // it is decided by reading its applications, in its own file.
+        if tag.chip?.ndefDependsOnCard == true {
+            return try await preflightDESFireSetup(on: tag)
+        }
         switch tag.chip?.family {
         case .type2:
             guard let cc = tag.chip?.factoryCC else {

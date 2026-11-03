@@ -24,6 +24,20 @@ public struct ChipProfile: Hashable, Sendable, Codable {
         self.manufacturer = manufacturer
         self.memoryLayout = memoryLayout
     }
+
+    /// Whether this chip's NDEF support belongs to the individual card rather
+    /// than to the chip, so that only asking the card can settle it.
+    ///
+    /// MIFARE DESFire, in every generation: its data lives in applications, and
+    /// an NDEF application is one a card may or may not have been given. NTAG424
+    /// DNA is also Type 4, but every one ships with its NDEF application, so the
+    /// catalog can declare it.
+    public var ndefDependsOnCard: Bool {
+        if case .type4(let variant) = family {
+            return variant.isDESFire
+        }
+        return false
+    }
 }
 
 /// Stable, equatable identifier for a chip model. Not the same as a tag UID —
@@ -50,6 +64,12 @@ public enum ChipID: Hashable, Sendable, Codable {
     case mifareDESFireEV2
     case mifareDESFireEV3
     case ePassport
+    /// An NFC Forum Type 4 tag from a vendor iOS does not class as MIFARE (ST,
+    /// Infineon, an Android phone emulating one). Reached through the NDEF
+    /// application AID, so the chip model itself is never read.
+    case genericType4
+    /// A personal health device speaking NFC Forum PHDC over a Type 4 tag.
+    case personalHealthDevice
     case unknown
 }
 

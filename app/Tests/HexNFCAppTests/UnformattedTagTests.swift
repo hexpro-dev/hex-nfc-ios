@@ -63,20 +63,30 @@ final class UnformattedTagTests: XCTestCase {
         XCTAssertEqual(model.formatState, .readable)
     }
 
-    /// A chip with no NDEF area at all reaches the same "zero records" branch and
-    /// must *not* be labelled unformatted: no format exists that would give a
-    /// DESFire an NDEF area, so offering one would be a dead end dressed as a fix.
+    /// A DESFire reaches the same "zero records" branch, and is never labelled
+    /// unformatted: it has no Capability Container page to be missing. A blank
+    /// one is labelled as what it is, a card with no NDEF application, because
+    /// Format can now give it one.
     @MainActor
-    func test_chipWithNoNDEFArea_isNotCalledUnformatted() async {
+    func test_aBlankDESFire_isNotSetUpForNDEF_ratherThanUnformatted() async {
         let model = ScanFlowModel(factory: SimulatedSessionFactory(makeChip: { DESFireEV3Simulator() }))
 
         await model.begin()
 
         XCTAssertEqual(model.phase, .ready)
-        XCTAssertEqual(
-            model.formatState, .unknown,
-            "DESFire has no blind-readable NDEF area, which is not an unformatted tag"
-        )
+        XCTAssertEqual(model.formatState, .noNDEFApplication)
+    }
+
+    /// A transit card reaches the same branch and gets no notice at all. Format
+    /// would refuse it, so naming a repair would be a dead end dressed as a fix.
+    @MainActor
+    func test_aTransitDESFire_isNotLabelled() async {
+        let model = ScanFlowModel(factory: SimulatedSessionFactory(makeChip: { DESFireEV3Simulator.personalised() }))
+
+        await model.begin()
+
+        XCTAssertEqual(model.phase, .ready)
+        XCTAssertEqual(model.formatState, .unknown)
     }
 
     /// The flag describes the tag currently in the field, so it must not survive
@@ -227,8 +237,9 @@ final class UnformattedTagTests: XCTestCase {
     }
 
     /// The chip gate, which decides whether a refusal is labelled at all. A
-    /// DESFire has no NDEF area for a format to create, so a perfect-looking
-    /// Capability Container in hand still earns no verdict.
+    /// DESFire keeps no Capability Container in a page, so a perfect-looking one
+    /// in hand still earns no page-3 verdict; its state comes from its
+    /// applications instead (`desfireFormatState(for:)`).
     @MainActor
     func test_theVerdictIsGatedOnTheChipAsWellAsTheBytes() async throws {
         let type2 = try await SimulatedSession(chip: NTAG213Simulator()).start(alert: "")
@@ -240,7 +251,7 @@ final class UnformattedTagTests: XCTestCase {
         )
         XCTAssertEqual(
             ScanFlowModel.formatState(for: desfire, capabilityContainer: cc), .unknown,
-            "no format gives a DESFire an NDEF area, so there is nothing to say"
+            "a DESFire has no page 3 to judge"
         )
         XCTAssertEqual(
             ScanFlowModel.formatState(for: type2, capabilityContainer: nil), .unknown,

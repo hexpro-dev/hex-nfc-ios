@@ -6,7 +6,7 @@ import HexNFCShaders
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Top-level operations launcher. Seven tiles → push to a per-op subview.
+/// Top-level operations launcher. Eight tiles → push to a per-op subview.
 /// Each subview owns its own `OperationsFlowModel` for the duration of the
 /// NFC interaction. Destructive operations gate behind `DestructiveConfirmation`.
 struct OperationsSheet: View {
@@ -90,6 +90,15 @@ struct OperationsSheet: View {
                                 systemImage: "exclamationmark.lock",
                                 tint: HexTokens.Color.dangerText,
                                 destination: AnyView(SetAttemptLimitOperationView(
+                                    appModel: appModel,
+                                    onTagChanged: onTagChanged
+                                ))
+                            )
+                            OperationTile(
+                                title: "Remove NDEF setup",
+                                systemImage: "arrow.counterclockwise",
+                                tint: HexTokens.Color.dangerText,
+                                destination: AnyView(RemoveNDEFSetupOperationView(
                                     appModel: appModel,
                                     onTagChanged: onTagChanged
                                 ))
@@ -187,7 +196,7 @@ private struct OperationTile: View {
 
 // MARK: - Per-operation views
 
-private struct OperationContainer<Content: View>: View {
+struct OperationContainer<Content: View>: View {
     let title: LocalizedStringKey
     let intro: LocalizedStringKey
     @ViewBuilder let content: () -> Content
@@ -367,6 +376,18 @@ private struct PhaseBanner: View {
         case .formatted(alreadyFormatted: false):
             "Tag formatted."
 
+        case .ndefApplicationCreated:
+            "Card set up for NDEF."
+
+        case .ndefAlreadySetUp:
+            "Already set up for NDEF: nothing written."
+
+        case .ndefSetupRemoved:
+            "NDEF setup removed. The card is blank."
+
+        case .alreadyBlank:
+            "This card is already blank: nothing changed."
+
         case .permanentlyLocked(verified: true):
             "Tag permanently locked."
 
@@ -410,7 +431,8 @@ private struct EraseOperationView: View {
         _model = State(initialValue: OperationsFlowModel(
             factory: appModel.sessionFactory,
             operation: .erase,
-            credentials: appModel.library.tagCredentials
+            credentials: appModel.library.tagCredentials,
+            activity: appModel.reviewPrompt
         ))
     }
 
@@ -427,55 +449,9 @@ private struct EraseOperationView: View {
         ) {
             destructiveBody(
                 model: model,
-                alert: "Hold tag to erase.",
+                alert: String(localized: "Hold tag to erase."),
                 actionTitle: "Erase tag",
                 warning: "This clears the tag's records. It replaces the message rather than erasing the memory, so on the tags Hex NFC writes page by page the old bytes stay in the pages until something writes over them.",
-                onTagChanged: onTagChanged
-            )
-        }
-        .operationMoments(model)
-    }
-}
-
-private struct FormatOperationView: View {
-    @Bindable var appModel: AppModel
-    var onTagChanged: (TagObservation) -> Void = { _ in }
-    @State private var model: OperationsFlowModel
-
-    init(appModel: AppModel, onTagChanged: @escaping (TagObservation) -> Void = { _ in }) {
-        self.appModel = appModel
-        self.onTagChanged = onTagChanged
-        _model = State(initialValue: OperationsFlowModel(
-            factory: appModel.sessionFactory,
-            operation: .format,
-            credentials: appModel.library.tagCredentials
-        ))
-    }
-
-    var body: some View {
-        OperationContainer(
-            title: "Format",
-            // Scoped the same way the Erase intro is, and for the same reason:
-            // no chip is known until the tap, so every sentence has to hold for
-            // both families. "It does not touch the data area." was true of the
-            // Type-2 path and false of the Type-5 one, which wrote an empty
-            // message over block 1 and took a SLIX2 owner's records with it
-            // (2026-09-22). `Type5Formatter` now seeds that empty message only
-            // into a blank area, so the promise holds everywhere and the user is
-            // sent to the operation that does mean to clear a tag.
-            intro: "Write the Capability Container so the chip declares itself as an NDEF tag. Use this on a fresh chip that wasn't shipped pre-formatted.\n\nRecords already on the tag stay where they are. A tag that has never held a message gets an empty one, so a reader sees a blank tag rather than a broken one. To clear a tag that has records on it, use Erase."
-        ) {
-            destructiveBody(
-                model: model,
-                alert: "Hold tag to format.",
-                actionTitle: "Format tag",
-                // The old warning ("Existing NDEF records become unreadable
-                // until rewritten") contradicted the intro above and was not
-                // true of either family: Type-2 refuses the write outright
-                // unless page 3 is still blank, and a Type-5 tag reads the same
-                // records back through the CC this writes. What is worth saying
-                // is the part that cannot be taken back.
-                warning: "This writes the Capability Container. On the chips that keep it in a write-once page there is no second attempt. Your records are left in place.",
                 onTagChanged: onTagChanged
             )
         }
@@ -494,7 +470,8 @@ private struct PermanentLockOperationView: View {
         _model = State(initialValue: OperationsFlowModel(
             factory: appModel.sessionFactory,
             operation: .permanentLock,
-            credentials: appModel.library.tagCredentials
+            credentials: appModel.library.tagCredentials,
+            activity: appModel.reviewPrompt
         ))
     }
 
@@ -505,7 +482,7 @@ private struct PermanentLockOperationView: View {
         ) {
             destructiveBody(
                 model: model,
-                alert: "Hold tag to lock.",
+                alert: String(localized: "Hold tag to lock."),
                 actionTitle: "Permanently lock this tag",
                 warning: "This is permanent. The tag becomes read-only: for life. No password recovers it.",
                 onTagChanged: onTagChanged
@@ -565,7 +542,8 @@ private struct ProtectWithPasswordOperationView: View {
             // `ProtectionArm.unstaged`, which is what keeps the identify tap
             // from asserting a family at a tag nothing has looked at.
             operation: .enableProtection(ProtectionArm.unstaged),
-            credentials: appModel.library.tagCredentials
+            credentials: appModel.library.tagCredentials,
+            activity: appModel.reviewPrompt
         ))
     }
 
@@ -581,7 +559,7 @@ private struct ProtectWithPasswordOperationView: View {
                 }
                 destructiveBody(
                     model: model,
-                    alert: "Hold tag to protect.",
+                    alert: String(localized: "Hold tag to protect."),
                     actionTitle: "Protect tag",
                     warning: "If you lose the password or key you set here, the protected memory on this tag can't be recovered.",
                     // The secret this run will write sits above the gate, so the
@@ -712,7 +690,8 @@ private struct RemovePasswordOperationView: View {
         _model = State(initialValue: OperationsFlowModel(
             factory: appModel.sessionFactory,
             operation: .disableProtection,
-            credentials: appModel.library.tagCredentials
+            credentials: appModel.library.tagCredentials,
+            activity: appModel.reviewPrompt
         ))
     }
 
@@ -727,7 +706,7 @@ private struct RemovePasswordOperationView: View {
                 }
                 destructiveBody(
                     model: model,
-                    alert: "Hold tag to remove the password.",
+                    alert: String(localized: "Hold tag to remove the password."),
                     actionTitle: "Remove password",
                     warning: "After this, anyone can write this tag again.",
                     // `retry()` drops the run's credential, and the gate's card
@@ -948,7 +927,8 @@ private struct SetAttemptLimitOperationView: View {
             factory: appModel.sessionFactory,
             operation: .setAttemptLimit(limit: limit),
             credentials: appModel.library.tagCredentials,
-            earlierRunMayHaveTouchedATag: earlierRunMayHaveTouchedATag
+            earlierRunMayHaveTouchedATag: earlierRunMayHaveTouchedATag,
+            activity: appModel.reviewPrompt
         )
     }
 }
@@ -998,7 +978,8 @@ private struct MemoryDumpOperationView: View {
         _model = State(initialValue: OperationsFlowModel(
             factory: appModel.sessionFactory,
             operation: .memoryDump,
-            credentials: appModel.library.tagCredentials
+            credentials: appModel.library.tagCredentials,
+            activity: appModel.reviewPrompt
         ))
     }
 
@@ -1056,7 +1037,7 @@ private struct MemoryDumpOperationView: View {
                 if offersTryAgain {
                     HexButton("Try again", systemImage: "arrow.clockwise", variant: .secondary) {
                         model.retry()
-                        Task { await model.begin(alert: "Hold tag to dump memory.") }
+                        Task { await model.begin(alert: String(localized: "Hold tag to dump memory.")) }
                     }
                     .accessibilityIdentifier("operation.retry")
                 }
@@ -1064,7 +1045,7 @@ private struct MemoryDumpOperationView: View {
         }
         .task {
             if case .idle = model.phase {
-                await model.begin(alert: "Hold tag to dump memory.")
+                await model.begin(alert: String(localized: "Hold tag to dump memory."))
             }
         }
         .onChange(of: model.phase) { _, newValue in
@@ -1144,7 +1125,7 @@ private struct OperationMoments: ViewModifier {
     }
 }
 
-private extension View {
+extension View {
     func operationMoments(_ model: OperationsFlowModel) -> some View {
         modifier(OperationMoments(model: model))
     }
@@ -1163,7 +1144,7 @@ private extension View {
 /// After that: tap 1 identifies, the sheet closes, the typed-UID gate appears
 /// with nothing covering it, and tap 2 does the work.
 @MainActor
-private func destructiveBody(
+func destructiveBody(
     model: OperationsFlowModel,
     alert: String,
     actionTitle: LocalizedStringKey,

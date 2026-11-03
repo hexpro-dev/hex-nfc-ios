@@ -12,6 +12,7 @@ final class HexNFCUITestsLaunchTests: XCTestCase {
     @MainActor
     func testLaunch() {
         let app = XCUIApplication()
+        app.launchArguments += ["--noReviewPrompt"]
         app.launch()
 
         // Insert steps here to perform after app launch but before taking a screenshot,

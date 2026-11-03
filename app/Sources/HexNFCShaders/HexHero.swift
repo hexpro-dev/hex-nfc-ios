@@ -30,6 +30,9 @@ public enum HexHeroMoment: String, Sendable, CaseIterable {
     /// A meatier confirm for a *hard* action landing: a record added, a preset
     /// saved or loaded, a write kicked off. Pairs with no shader on its own.
     case commit
+    /// The passport camera has read the access key and locked it in: a click
+    /// into place, then a firm detent. Pairs with the scanner's tick.
+    case mrzLock
 
     /// The haptic pattern that pairs with the visual half.
     public var haptic: HexHapticPattern {
@@ -49,6 +52,7 @@ public enum HexHeroMoment: String, Sendable, CaseIterable {
         case .copy: .copyTick
         case .tap: .tapTick
         case .commit: .commitThud
+        case .mrzLock: .mrzLock
         }
     }
 

@@ -21,38 +21,46 @@ at step 1.
 
 ## Write a link to a blank tag
 
-::::steps
-:::step[Start a new build]
+:::::steps
+::::step[Start a new build]
 On the home screen, tap **Build**. The Tag screen opens with no records, under
 the heading "Empty tag".
-:::
+::::
 
-:::step[Add a URL record]
+::::step[Add a URL record]
 Tap **Add record** > **URL**. The record editor opens on the new record.
-:::
+::::
 
-:::step[Enter the address]
+::::step[Enter the address]
 In **URL**, type the address with its scheme in front, for example
 `https://hex.pro`, then tap **Save**. The record appears in the list. The app
 writes the address exactly as you entered it and adds nothing. An address that
 reaches the tag without its `https://` is not a working link. A phone that reads
 that tag has no page to open.
-:::
 
-:::step[Send the record to the tag]
+:::figure[After you tap **Save**, the Tag screen lists the new **URL** record, and **Write** at the top right is ready to tap.]
+![The Tag screen holding one URL record for https://hex.pro/nfc, below the Protection row. Close is at the top left and Write at the top right.](../../../assets/tag-editor--url-record.png)
+:::
+::::
+
+::::step[Send the record to the tag]
 Tap **Write**, at the top of the Tag screen. The write screen opens and reads
 "Hold tag against the top of your iPhone". iOS puts its own scan sheet over the
 app, carrying the same line.
-:::
 
-:::step[Hold the tag against your iPhone]
+:::figure[The write screen's line stays visible above the iOS scan sheet, which repeats it and carries its own Cancel.]
+![The write screen waiting for a tag. Hold tag against the top of your iPhone sits above the iOS sheet, which shows Ready to Scan, the same line and Cancel.](../../../assets/write-sheet--polling.png)
+:::
+::::
+
+::::step[Hold the tag against your iPhone]
 Rest the top edge of your iPhone on the tag and keep it there. The screen reads
 "Writing…", then "Verifying…". Nothing in this step locks the tag. You can write
 over it again as often as you like. The success wording, "Locked in", says only
 that the records went across and read back intact. The screen closes on its own
 and the Tag screen comes back.
-:::
 ::::
+:::::
 
 Writing replaces everything the tag held. If you want to keep some of what is
 already on a tag, scan it first. Edit that list instead of building a new one,

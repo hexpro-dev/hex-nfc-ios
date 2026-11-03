@@ -15,49 +15,58 @@ tag, and its password or key goes back to the chip's factory default.
 Before you start, open Hex NFC on your iPhone and scan the tag so it is on the
 Tag screen (see [Scan a tag](scan-a-tag.md)). Have the password it holds to
 hand. The card at the top of that screen names the chip on its first line, above
-the tag's UID. That name decides which of the two routes below is yours. A chip
-named in neither route carries no password Hex NFC can remove, because the app
-never puts one on it.
+the tag's UID. That name decides which kind of secret the removal asks for. A
+chip named on neither route below carries no password Hex NFC can remove,
+because the app never puts one on it.
 
 ## Remove a password in Operations
 
-This route is for the chips whose lock is a 4-byte password: the NTAG21x chips
-(NTAG213, NTAG213 TT, NTAG215, NTAG216) and MIFARE Ultralight EV1. NTAG 210µ
-has no password to remove.
+This route covers every chip the app can protect. It asks for nothing before
+the first tap. That tap reads which chip the tag is, and the screen then asks
+for the secret the tag holds now: a 4-byte password on the NTAG21x chips
+(NTAG213, NTAG213 TT, NTAG215, NTAG216), MIFARE Ultralight EV1 or ICODE SLIX2,
+and a 16-byte key on an NTAG424 DNA or a MIFARE Ultralight C. NTAG 210µ has no
+password to remove.
 [Chip support matrix](../developer/chip-support-matrix.md) lists what each chip
 carries.
 
-::::steps
-:::step[Open Operations]
+:::::steps
+::::step[Open Operations]
 On the **Tag** screen, open the menu in the top right, then tap **Operations…**.
-:::
+::::
 
-:::step[Open Remove password]
+::::step[Open Remove password]
 Tap **Remove password**.
-:::
+::::
 
-:::step[Enter the password the tag holds]
-In **Current password (4 bytes)**, enter the tag's 4-byte password as eight
-hexadecimal characters. Separators are ignored, so `FF FF FF FF` and
-`FFFFFFFF` are the same value. Tap **Continue**.
-:::
-
-:::step[Start the removal]
+::::step[Start the removal]
 Tap **Remove password**. The warning above it says what the removal costs:
 "After this, anyone can write this tag again."
-:::
 
-:::step[Hold the tag against the top of your iPhone]
+:::figure[The **Remove password** button you tap is the one at the foot of the screen, under the warning.]
+![The Remove password screen before the first tap: two paragraphs on what a removal does, a red warning card, and the Remove password button at the foot.](../../../assets/operations-remove-password--idle-warning.png)
+:::
+::::
+
+::::step[Hold the tag against the top of your iPhone]
 The app reads the tag's UID and ends the tap so you can type.
-:::
+::::
 
-:::step[Confirm the tag]
+::::step[Enter the secret the tag holds]
+A card headed "Tag is protected" asks for the secret the tag holds now. Enter a
+password in **Tag password (4 bytes)** as eight hexadecimal characters. On an
+NTAG424 DNA the field is **Tag key (16-byte AES)**, and on a
+MIFARE Ultralight C it is **Tag key (16-byte 3DES)**. Separators are ignored, so
+`FF FF FF FF` and `FFFFFFFF` are the same value.
+::::
+
+::::step[Confirm the tag]
 The screen shows the tag's UID beside the field, under "Type this tag's UID to
 confirm." Type those characters into the field, with no separators. Case does
 not matter. Tap **Remove password**, then hold the tag against your iPhone once
 more.
-:::
 ::::
+:::::
 
 ::include[two-tap-confirmation]
 
@@ -67,39 +76,44 @@ before it would show anything, that gate comes down with the other one.
 
 ## Remove protection from the Tag screen
 
-An NTAG424 DNA, MIFARE Ultralight C or ICODE SLIX2 tag is not handled by
-**Remove password**. Protection comes off these chips as part of a write, and
-you need the key or password the tag holds to do it. The write puts the records
+On any chip the app can protect, protection can also come off as part of a
+write, and you need the key or password the tag holds to do it. The write puts
+the records
 listed on the **Tag** screen back on the tag. After a scan that list is what the
 tag already holds, so its contents survive unless you edited the list yourself.
 
-::::steps
-:::step[Open Protection]
+:::::steps
+::::step[Open Protection]
 On the **Tag** screen, tap **Protection**.
-:::
+::::
 
-:::step[Turn the protection off]
-Turn off **Protect this tag with a key**. The switch reads
-**Password-protect this tag** on an ICODE SLIX2 tag. The note below it says
-the next write takes both locks off and returns the secret to its factory
-default.
-:::
+::::step[Turn the protection off]
+Turn off **Protect this tag with a key** on an NTAG424 DNA or MIFARE
+Ultralight C tag, or **Password-protect this tag** on a chip that takes a
+password: an NTAG21x, MIFARE Ultralight EV1 or ICODE SLIX2. The note below it says
+the next write removes both the read and the write protection and returns the
+secret to its factory default.
+::::
 
-:::step[Keep the change]
+::::step[Keep the change]
 Tap **Done**.
-:::
+::::
 
-:::step[Write the tag]
+::::step[Write the tag]
 On the **Tag** screen, tap **Write**, then hold the tag against the top of your
 iPhone. The app reads the tag's UID and asks you to type it back.
-:::
+::::
 
-:::step[Confirm the tag]
+::::step[Confirm the tag]
 Type the UID shown beside the field, with no separators and in either case, then
 tap **Remove protection**. Hold the tag against your iPhone once more to make
 the change.
+
+:::figure[The **Remove protection** card shows the UID the app read, with an arrow to the empty field you type it into.]
+![The Remove protection confirmation card: its warning, the tag's UID beside an empty field, a dimmed Remove protection button, and Cancel below the card.](../../../assets/write--confirm-remove-protection.png)
 :::
 ::::
+:::::
 
 The write presents the key or password the app already holds for the tag. That
 is the one you entered on the **Protection** card, or the one you used when you
@@ -109,7 +123,8 @@ the chip:
 
 - On an NTAG424 DNA, enter it in **Tag key (16-byte AES)**.
 - On a MIFARE Ultralight C, enter it in **Tag key (16-byte 3DES)**.
-- On an ICODE SLIX2, enter it in **Tag password (4 bytes)**.
+- On an NTAG21x, a MIFARE Ultralight EV1 or an ICODE SLIX2, enter it in
+  **Tag password (4 bytes)**.
 
 Then tap **Unlock & continue**. No extra tap follows, because the app already
 read the tag's UID. The confirmation card comes next. Type the UID, tap
@@ -121,9 +136,15 @@ On an NTAG21x or a MIFARE Ultralight EV1, one tap presents one password. A tag
 that refuses it stops answering for the rest of that tap. The app never tries a
 second password on the same tap.
 
-To type another password, tap **Enter a different password**. The screen hands
-the form back. The refused password is frozen into the run that failed. A plain
-retry would present the same one again.
+When the tag refuses the password, the "Tag is protected" card comes back and
+reads "That password didn't unlock the tag. Check it and try again." Its field
+starts empty, so the refused password is not sent again unless you type it.
+Enter the password, tap **Unlock & continue**, and hold the tag once more.
+**Cancel** returns the screen to its starting state.
+
+If the removal fails for another reason, the screen offers
+**Enter a different password**. It takes the screen back to its start, and the
+next run asks for the password again in an empty field.
 
 When the tag refuses the password you entered, and that password was not already
 `FF FF FF FF`, the app offers one specific thing to try. A card headed "Try the
@@ -135,6 +156,10 @@ factory with. Tap **Try the factory default** to send it on the next tap. Until
 the tap runs, the screen says which password it will send. It reads: "The next
 tap will present this tag's factory default password (FF FF FF FF) instead of
 the one you entered."
+
+:::figure[After a refused password, the factory default card sits under the "Tag is protected" card, with **Try the factory default** at its foot.]
+![The Remove password screen after a refusal: a Tag is protected card with the refusal message and an empty password field, then the factory default card and Cancel.](../../../assets/operations-remove-password--factory-default-offer.png)
+:::
 
 :::warning
 If the factory default is not what the tag holds, the tap counts as one wrong

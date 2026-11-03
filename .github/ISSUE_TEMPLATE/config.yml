@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Help using the app
+    url: https://apps.hex.pro/hex-nfc/support
+    about: The user guide, what to try when a tag will not scan or write, and how to write to Hex Pro. In the app, Settings > Send Feedback also reaches us.
+  - name: Report a security issue
+    url: https://github.com/hexpro-dev/hex-nfc-ios/security/policy
+    about: Please report vulnerabilities privately to security@hex.pro, not in a public issue.

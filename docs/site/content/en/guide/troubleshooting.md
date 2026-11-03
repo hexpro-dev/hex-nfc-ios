@@ -19,8 +19,8 @@ technical detail opens underneath it.
 ## Find your message
 
 - [Timed out, lost the tag mid-read, or cancelled](#scan-stopped)
-- [MIFARE Classic, no NFC on this device, a build not authorised, or an
-  operation the tag does not support](#tag-not-readable)
+- [MIFARE Classic, no NFC on this device, a build not authorised, an operation
+  the tag does not support, or a health device](#tag-not-readable)
 - [Records too large, or the tag wrote back something different](#write-failed)
 - [A different tag, after you typed a tag's ID](#different-tag)
 - [A password check that did not finish](#password-check)
@@ -61,7 +61,7 @@ answers.
 again. If one particular tag times out every time, it may be a MIFARE Classic,
 which iPhone can't read (an iOS limitation, not a fault in the tag)."
 
-iOS ended the session because no tag answered it for long enough. You see this
+iOS ended the session because no tag answered it before its time ran out. You see this
 sentence when your iPhone had already found a tag on the same screen, for
 example on the second hold of a protected tag, or when an earlier attempt on
 that screen ended in an error. Move the top edge of your iPhone slowly over the
@@ -84,11 +84,11 @@ on the tag changed.
 
 ## Why can my iPhone not read this tag at all? {#tag-not-readable}
 
-Three messages say the read cannot happen at all, however the tag is held. A
-fourth sits here too, and it is not a read failure.
+Three messages say the read cannot happen at all, however the tag is held. Two
+more sit here too, and neither is a read failure.
 
 "This looks like a MIFARE Classic tag. iPhone can detect it but can't read its
-encrypted memory. IOS doesn't expose the MIFARE Classic keys any app would
+encrypted memory. iOS doesn't expose the MIFARE Classic keys any app would
 need." The chip answered far enough for the app to recognise the family. It got
 no further.
 
@@ -103,27 +103,34 @@ this iPhone at all. An iPhone has no NFC switch to turn back on. No setting in
 Hex NFC changes this. Holding the tag differently will not help.
 [Common questions](faq.md) says what the app needs to run. If the message
 appears on an iPhone that runs Hex NFC otherwise, open **Diagnostics** and copy
-the text. Send it to the address under
-[If you need more help](#if-you-need-more-help).
+the text. Send it as [If you need more help](#if-you-need-more-help)
+describes.
 
 "This build isn't authorised for that tag type yet." Your copy of the app is
 not registered to read that kind of tag. Nothing about the tag or the way you
 hold it changes that. Check the App Store for an update to Hex NFC first. If
-the message comes back, open **Diagnostics** and send the text on to the
-address under [If you need more help](#if-you-need-more-help).
+the message comes back, open **Diagnostics** and send the text as
+[If you need more help](#if-you-need-more-help) describes.
 
 "This tag does not support that operation." is the message that is not about
 reading. The tag read. What it will not do is the operation you asked for, by
 the route you took. The tag info card names the chip. Where the chip reports
 them, its **Supports** and **Features** rows say what it can do.
 
-**Operations** > **Protect with password** covers NTAG213, NTAG215, NTAG216 and
-MIFARE Ultralight EV1. An NTAG424 DNA, a MIFARE Ultralight C and an ICODE SLIX2
-take the **Protection** card on the Tag screen instead. That route protects them
-properly. [Protect a tag with a password](protect-a-tag.md) walks both routes.
+**Operations** > **Protect with password** and the **Protection** card on the
+Tag screen both protect seven chips: NTAG213, NTAG215, NTAG216, MIFARE
+Ultralight EV1, MIFARE Ultralight C, NTAG424 DNA and ICODE SLIX2.
+[Protect a tag with a password](protect-a-tag.md) walks both routes.
 [Tags that work with Hex NFC](tags-that-work.md) covers the chips the app
 recognises. The [chip support matrix](../developer/chip-support-matrix.md) has
 the full technical detail, chip by chip.
+
+"This is a health device. Hex NFC never writes to health devices or sends them
+commands." means the tag you held is a medical device, such as an insulin pen.
+A write, an operation or an **Advanced** console command aimed at one stops
+before anything is written to it or your command goes out, so the device is
+unchanged. Scanning it with **Scan** opens its **Health device** screen, which
+[Health devices](tags-that-work.md#health-devices) describes.
 
 ## What does "Write failed" mean? {#write-failed}
 
@@ -136,6 +143,10 @@ you to type it back a second time. Your consent to change a tag is not carried
 across a failure. A preset written from **Library** is not confirmed that way:
 whichever tag you present is the instruction, so its retry goes straight back
 to one tap.
+
+:::figure[A failed write names its reason under "Write failed", with **Diagnostics** below it and **Close** beside **Try again**.]
+![The write screen showing Write failed over a message that a location record is missing its coordinates, then Diagnostics, Close and Try again.](../../../assets/write-sheet--write-failed.png)
+:::
 
 Two of the messages have a fix of their own.
 
@@ -166,12 +177,15 @@ There the tag you held is not the tag the editor was opened from. Hold that tag
 instead.
 
 On the **Operations** screen a failed operation shows the message, then
-**Diagnostics** directly under it, then **Try again** below that. Three screens
-replace that button because the password you typed is already committed to the
-run: **Protect with password** and **Attempt limit** show **Start over**, and
-**Remove password** shows **Enter a different password**. Each one hands the
-form back, so the next attempt sends what you type next rather than the password
-the tag has just refused.
+**Diagnostics** directly under it, then **Try again** below that. Two screens
+replace that button: **Attempt limit** shows **Start over**, and
+**Remove password** shows **Enter a different password**. Each one asks for the
+password again, so the next attempt sends what you type next rather than the
+password the tag has just refused.
+
+:::figure[On the **Permanent lock** screen, a refused lock shows its message, then **Diagnostics**, then **Try again**.]
+![The Permanent lock screen with a warning that a password-protected tag cannot be locked, above the Diagnostics row and the Try again button.](../../../assets/operations--error.png)
+:::
 
 ## What if the password check does not finish? {#password-check}
 
@@ -195,17 +209,22 @@ Two more describe a tag answering in a shape the app did not expect:
 - "The tag responded with data this app could not parse."
 
 All four have the same next move. Open **Diagnostics**, copy the text, then hold
-the tag again. When the same message comes back for the same tag, those
-diagnostics identify it.
+the tag again. When the same message comes back for the same tag, the
+copied diagnostics identify the fault.
 
 ## If you need more help {#if-you-need-more-help}
 
-The app publishes one address, `support@hex.pro`, in the **Privacy Policy** and
-the **Terms & Conditions**, both in **Settings** under **Legal**. Send the copied
-diagnostics there, with your iPhone model and your iOS version, which the
-iPhone's own Settings app shows under General, then About. If the tag read far
-enough to show a tag info card, add the chip name from it. If it never read at
-all, say so. Say which tags read and which do not.
+Send the copied diagnostics to Hex Pro from the app: on the home screen, tap
+the gear button, then **Send Feedback**, and paste them into the message. Add
+the chip name if the tag read far enough to show a tag info card. If it never read at all, say so, and say which tags read and which do
+not. The form adds the app version, iOS version, device model and language by
+itself. For an answer, add your email under **Reply address (optional)**.
+[Feedback and ratings](settings.md#feedback-and-ratings) describes the form.
+
+You can also email `support@hex.pro`, the address in the **Privacy Policy** and
+the **Terms & Conditions** under **Legal** in **Settings**. By email, include
+the app version from **Version** in **Settings**, and your iPhone model and iOS
+version, which the iPhone's own Settings app shows under General, then About.
 
 Next, read [Scan a tag](scan-a-tag.md) for what a healthy read looks like, or
 [Common questions](faq.md) for what the app needs to run at all.

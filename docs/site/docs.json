@@ -18,7 +18,13 @@
 	],
 	"i18n": {
 		"locales": [
-			"en"
+			"en",
+			"zh",
+			"ar",
+			"es",
+			"ja",
+			"fr",
+			"pt-BR"
 		],
 		"sourceLocale": "en",
 		"parity": "graceful"

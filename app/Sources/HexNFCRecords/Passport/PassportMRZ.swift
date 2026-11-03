@@ -16,7 +16,7 @@ import Foundation
 public struct PassportMRZ: Hashable, Sendable, Codable {
     /// The document (passport) number exactly as printed, e.g. `PA1234567`.
     /// Normalised to upper case and `<`-padded to nine characters when the key
-    /// is assembled.
+    /// is assembled. A longer number is kept whole (see `documentNumberField`).
     public var documentNumber: String
     /// Date of birth as six digits `YYMMDD`.
     public var dateOfBirth: String
@@ -55,17 +55,25 @@ public struct PassportMRZ: Hashable, Sendable, Codable {
 
     // MARK: - Derived fields
 
-    /// The document number in its 9-character MRZ field form: upper-cased and
-    /// right-padded with `<` filler. (Numbers longer than nine characters use
-    /// the extended optional-data scheme, which v1 does not support.)
+    /// The document number as BAC and PACE hash it: upper case, letters and
+    /// digits only (so spaces, hyphens and `<` typed from a card drop out), and
+    /// `<`-padded to nine characters when shorter.
+    ///
+    /// A longer number is kept whole. Doc 9303-11 Table 14 and the worked
+    /// examples in Appendix D.2 use "always the complete document number", with
+    /// the check digit over all of it; a TD1 or TD2 card prints the overflow in
+    /// its optional data (Doc 9303-5 note j). Belgian eID numbers are 12 digits,
+    /// and cutting them to nine, as this did until 2026-10-27, derived a key no
+    /// such card could accept.
     public var documentNumberField: String {
-        let trimmed = String(documentNumber.uppercased().prefix(9))
-        return trimmed.padding(toLength: 9, withPad: "<", startingAt: 0)
+        let number = documentNumber.uppercased().filter { ("A" ... "Z").contains($0) || ("0" ... "9").contains($0) }
+        return number.count >= 9 ? number : number.padding(toLength: 9, withPad: "<", startingAt: 0)
     }
 
     /// The canonical `MRZ_information` string BAC/PACE key derivation hashes:
     /// `docNumberField ‖ docCheck ‖ DOB ‖ dobCheck ‖ expiry ‖ expiryCheck`
-    /// (24 characters). Doc 9303 Part 11, §D / §9.7.2.
+    /// (24 characters, more for a long document number). Doc 9303 Part 11,
+    /// §D / §9.7.2.
     public var mrzInformation: String {
         let doc = documentNumberField
         let dob = String(dateOfBirth.prefix(6))

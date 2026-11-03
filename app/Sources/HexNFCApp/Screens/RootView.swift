@@ -4,6 +4,7 @@ import HexNFCKit
 import HexNFCRecords
 import HexNFCShaders
 import HexNFCStorage
+import StoreKit
 import SwiftUI
 
 /// Top-level mount. The Xcode app target's `ContentView` calls into this.
@@ -23,7 +24,15 @@ public struct RootView: View {
     @State private var activeTransitTagInfo: ScannedTagInfo?
     @State private var activePassportData: PassportData?
     @State private var activePassportTagInfo: ScannedTagInfo?
+    @State private var activeHealthDevice: HealthDeviceScan?
+    @State private var activeHealthDeviceTagInfo: ScannedTagInfo?
     @State private var costs: DonationProgress = .fallback
+    @State private var showingFeedback = false
+    /// The "Loving Hex NFC?" card, when it is up. See `proposeReviewWhenIdle`.
+    @State private var reviewCard: ReviewPromptCard.Stage?
+    @State private var idleClock = IdleClock()
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
     #if DEBUG
     @State private var showingHarness = false
     #endif
@@ -48,6 +57,9 @@ public struct RootView: View {
                 onAdvanced: { showingAdvanced = true },
                 onSettings: { showingSettings = true }
             )
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                reviewCardInset
+            }
             .background(HexTokens.Color.surface0.ignoresSafeArea())
             .toolbarBackground(.hidden, for: .navigationBar)
             #if DEBUG
@@ -72,9 +84,16 @@ public struct RootView: View {
             ScanSheet(
                 factory: model.sessionFactory,
                 library: model.library,
-                onComplete: { records, tagInfo, transitCard, passportData, protection, protectionIsUnknown in
+                activity: model.reviewPrompt,
+                onComplete: { records, tagInfo, transitCard, passportData, healthDevice, protection, protectionIsUnknown in
                     showingScan = false
-                    if let passportData {
+                    if let healthDevice {
+                        // Health devices are identified, never read or written,
+                        // and never persisted: a read-only result that points at
+                        // an app which can read them, and no record editor.
+                        activeHealthDeviceTagInfo = tagInfo
+                        activeHealthDevice = healthDevice
+                    } else if let passportData {
                         // Passports are read-only and never persisted — show the
                         // session-only result view, skipping the record editor.
                         activePassportTagInfo = tagInfo
@@ -111,6 +130,9 @@ public struct RootView: View {
         }
         .sheet(item: $activePassportData) { data in
             PassportResultSheet(passport: data, tagInfo: activePassportTagInfo)
+        }
+        .sheet(item: $activeHealthDevice) { device in
+            HealthDeviceResultSheet(device: device, tagInfo: activeHealthDeviceTagInfo)
         }
         .sheet(item: $activeEditModel) { editModel in
             TagEditorSheet(
@@ -155,7 +177,8 @@ public struct RootView: View {
                         // password, which were generated here and shown once, the
                         // way back is to write the same preset again while it
                         // still exists. Deleting the preset drops that copy too.
-                        uidConfirmation: .notRequired
+                        uidConfirmation: .notRequired,
+                        activity: model.reviewPrompt
                     )
                 },
                 onOpenHistoryEntry: { entry in
@@ -205,6 +228,9 @@ public struct RootView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsSheet(model: model)
         }
+        .sheet(isPresented: $showingFeedback) {
+            FeedbackSheet()
+        }
         #if DEBUG
         .sheet(isPresented: $showingHarness) {
             TestHarnessScreen(appModel: model)
@@ -216,6 +242,15 @@ public struct RootView: View {
         }
         .task {
             costs = await CostsClient.fetch()
+        }
+        .background(TouchActivityMonitor { idleClock.touched() })
+        .task(id: IdleWatch(homeIsFrontmost: isHomeFrontmost, isActive: scenePhase == .active)) {
+            await proposeReviewWhenIdle()
+        }
+        .onChange(of: isHomeFrontmost) { _, isFrontmost in
+            if !isFrontmost {
+                leftHomeWithCardUp()
+            }
         }
     }
 
@@ -290,7 +325,10 @@ public struct RootView: View {
         )
         return ScannedTagInfo(
             chipName: entry.chipName,
-            familyName: entry.chipFamily.isEmpty ? nil : entry.chipFamily,
+            // "Unknown" is what the scan stored for a chip it could not name,
+            // in English. The live scan of that tag has no family, and its card
+            // says "Tag" in the user's language, so the re-opened one does too.
+            familyName: entry.chipFamily.isEmpty || entry.chipFamily == "Unknown" ? nil : entry.chipFamily,
             manufacturer: entry.manufacturer,
             uidHex: entry.uidHex.isEmpty ? nil : entry.displayUID,
             totalBytes: entry.totalBytes > 0 ? entry.totalBytes : nil,
@@ -304,11 +342,157 @@ public struct RootView: View {
             featureSummary: ScannedTagInfo.featureSummary(fromRaw: entry.capabilitiesRaw)
         )
     }
+
+    // MARK: - Review prompt
+
+    /// Home with nothing in front of it: every sheet this view presents is
+    /// down. The scan sheet counts as in front for as long as the iOS NFC card
+    /// is up, because that card only ever opens over it.
+    private var isHomeFrontmost: Bool {
+        var anythingUp = showingScan || showingLibrary || showingAdvanced || showingSettings || showingFeedback
+            || activeEditModel != nil || activeWriteModel != nil
+            || activeTransitCard != nil || activePassportData != nil
+        #if DEBUG
+        anythingUp = anythingUp || showingHarness
+        #endif
+        return !anythingUp
+    }
+
+    private var reducesMotion: Bool {
+        systemReduceMotion || model.settings.reduceMotionOverride
+    }
+
+    @ViewBuilder
+    private var reviewCardInset: some View {
+        if let stage = reviewCard {
+            ReviewPromptCard(
+                stage: stage,
+                onLove: loveIt,
+                onMeh: meh,
+                onHide: hideReviewCard,
+                onSendFeedback: sendFeedbackFromCard
+            )
+            .padding(.horizontal, HexTokens.Spacing.xl)
+            .padding(.top, HexTokens.Spacing.m)
+            .padding(.bottom, HexTokens.Spacing.s)
+            .background(alignment: .bottom) {
+                // Fades Home's content out under the card instead of letting
+                // a tile show through the gap at its edges.
+                LinearGradient(
+                    colors: [HexTokens.Color.surface0.opacity(0), HexTokens.Color.surface0],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+                .ignoresSafeArea(edges: .bottom)
+            }
+            .transition(reducesMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    /// Waits until Home has gone ten seconds without a touch, then shows the
+    /// card if `ReviewPromptModel` says this person may be asked.
+    ///
+    /// Restarted by `.task(id:)` whenever Home comes to the front or the app
+    /// becomes active again, so the ten seconds always run from the moment
+    /// Home was in view. A touch moves the deadline without restarting the
+    /// task, which keeps touches from re-evaluating this view's body.
+    private func proposeReviewWhenIdle() async {
+        guard isHomeFrontmost, scenePhase == .active, reviewCard == nil else { return }
+        idleClock.touched()
+        while true {
+            let remaining = idleClock.remaining(of: IdleClock.wait)
+            if remaining <= .zero {
+                break
+            }
+            do {
+                try await Task.sleep(for: remaining)
+            } catch {
+                return
+            }
+        }
+        guard isHomeFrontmost, reviewCard == nil, model.reviewPrompt.mayPropose else { return }
+        model.reviewPrompt.proposed()
+        withAnimation(reducesMotion ? nil : .spring(response: 0.45, dampingFraction: 0.85)) {
+            reviewCard = .asking
+        }
+        AccessibilityNotification.Announcement(String(localized: "Loving Hex NFC?")).post()
+    }
+
+    private func loveIt() {
+        model.reviewPrompt.answer(.loved)
+        withAnimation { reviewCard = .thanks }
+        Task {
+            // Long enough for "Thank you!" to register before Apple's sheet,
+            // if iOS shows one, comes up over it.
+            try? await Task.sleep(for: .milliseconds(400))
+            requestReview()
+            try? await Task.sleep(for: .milliseconds(1600))
+            if reviewCard == .thanks {
+                withAnimation { reviewCard = nil }
+            }
+        }
+    }
+
+    private func meh() {
+        // Settled now, not on the next tap: whatever follows, this person is
+        // not asked again.
+        model.reviewPrompt.answer(.declined)
+        withAnimation { reviewCard = .feedbackOffer }
+    }
+
+    private func hideReviewCard() {
+        if reviewCard == .asking {
+            model.reviewPrompt.answer(.hidden)
+        }
+        withAnimation { reviewCard = nil }
+    }
+
+    private func sendFeedbackFromCard() {
+        reviewCard = nil
+        showingFeedback = true
+    }
+
+    /// Opening anything from Home while the card is asking is an answer of
+    /// sorts, and the quietest one: it counts as "Hide". The other stages have
+    /// already been answered and just go.
+    private func leftHomeWithCardUp() {
+        guard let stage = reviewCard else { return }
+        if stage == .asking {
+            model.reviewPrompt.answer(.hidden)
+        }
+        reviewCard = nil
+    }
 }
 
 /// `id` is `nonisolated` here and on `WriteFlowModel` below because
 /// `Identifiable.id` is a nonisolated requirement, and the object's address
 /// reads no main-actor state.
+/// What the idle wait restarts on. Touches are deliberately not part of it;
+/// see `RootView.proposeReviewWhenIdle`.
+private struct IdleWatch: Equatable {
+    let homeIsFrontmost: Bool
+    let isActive: Bool
+}
+
+/// When Home was last touched, kept outside SwiftUI's state so a touch moves
+/// the idle deadline without re-evaluating `RootView`'s body, whose sheet
+/// closures re-run on every pass.
+@MainActor
+private final class IdleClock {
+    /// How long Home has to sit untouched before the review card may appear.
+    static let wait: Duration = .seconds(10)
+
+    private var lastTouch = ContinuousClock.now
+
+    func touched() {
+        lastTouch = .now
+    }
+
+    func remaining(of wait: Duration) -> Duration {
+        wait - (ContinuousClock.now - lastTouch)
+    }
+}
+
 extension EditFlowModel: Identifiable {
     public nonisolated var id: ObjectIdentifier {
         ObjectIdentifier(self)

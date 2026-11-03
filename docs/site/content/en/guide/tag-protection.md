@@ -9,8 +9,8 @@ tags:
   - security
 ---
 
-A tag stuck to a poster answers every phone that comes near it, and a blank chip
-lets any of them overwrite what you wrote. Protection is the chip's own answer
+A tag stuck to a poster answers every phone that comes near it, and an unprotected
+chip lets any of them overwrite what you wrote. Protection is the chip's own answer
 to that. The secret sits in the chip's configuration pages, and the chip refuses
 a change until the secret is presented. Hex NFC can set that secret from your
 iPhone, present it on a later scan and take it off again. The gate belongs to
@@ -41,7 +41,7 @@ their secret covers writing, and reads stay open.
 The **Protection** card on the Tag screen carries a one-line summary of what
 the scan found. "Off" means the scan established that no secret is set.
 "Password · write-only" means writes are gated and reads are open, and
-"Password · read + write" means both are. The third answer is "Unknown ·
+"Password · read + write" means both are. The fourth answer is "Unknown ·
 couldn't read this tag's protection", which is not the same as "Off": the tag
 would not say. Scan the tag again: a tap that ends early leaves the app without
 an answer. A chip whose protection the app cannot interrogate reports the same
@@ -50,10 +50,14 @@ refuses the write, and the write screen asks for the secret instead of changing
 anything. Scanning a read-protected tag with no password in hand gives "This
 tag needs its password before it will show anything."
 
+:::figure[The tag info card names the chip, and the **Protection** card under it gives the summary, here "Password · write-only".]
+![The Tag screen for an NTAG213. The tag info card lists type, maker, memory, supports, features, UID, times read and signature, with the Protection card below it.](../../../assets/tag-screen--protection-write-only.png)
+:::
+
 ## Which chips can carry a secret
 
 The secret's shape follows the chip, and so does the field the app asks for it
-in. That field is the unlock prompt, and it turns up when a tag refuses you. A
+in. That field sits on the unlock prompt, which turns up when a tag refuses you. A
 protected tag that will not answer a scan puts "Tag is protected" above the
 field, with **Unlock & scan again** below it. A write to a protected tag asks
 the same way before it goes ahead.

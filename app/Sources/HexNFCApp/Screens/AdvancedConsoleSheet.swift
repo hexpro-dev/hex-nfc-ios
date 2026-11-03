@@ -387,7 +387,7 @@ private struct PresetRow: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: HexTokens.Spacing.xs) {
                 HStack {
-                    Text(preset.name)
+                    Text(preset.localizedName)
                         .font(HexTokens.Font.body)
                         .foregroundStyle(HexTokens.Color.textPrimary)
                     Spacer()

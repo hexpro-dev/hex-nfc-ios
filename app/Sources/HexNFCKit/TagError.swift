@@ -488,6 +488,20 @@ public extension TagError {
         )
     }
 
+    /// A write, erase, format or raw command was aimed at a personal health
+    /// device, and the app refused before sending anything.
+    ///
+    /// Wears `.capabilityUnsupported` so every existing classification treats it
+    /// as the refusal it is, but says why: "does not support that operation"
+    /// is wrong about an insulin pen, which would accept the write.
+    static func healthDeviceIsReadOnly(_ capability: TagCapability, diagnostics: String = "") -> TagError {
+        TagError(
+            kind: .capabilityUnsupported(capability),
+            userMessage: "This is a health device. Hex NFC never writes to health devices or sends them commands.",
+            diagnostics: "refused before any frame: personal health device \(diagnostics)"
+        )
+    }
+
     static func malformedResponse(_ response: Data, diagnostics: String = "") -> TagError {
         let prefix = diagnostics.isEmpty ? "" : "\(diagnostics)\n"
         return TagError(

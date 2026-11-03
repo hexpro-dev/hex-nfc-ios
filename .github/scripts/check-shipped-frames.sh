@@ -48,11 +48,13 @@ readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # So every conformance the filter finds, anywhere in the tree, is a conformer,
 # and a conformer's job is to carry frames rather than to answer for the chip.
 
-# The guarded surface. Six of these are extension-only defaults on
+# The guarded surface. Ten of these are extension-only defaults on
 # `ConnectedTag`; `enableProtection`, `disableProtection` and `authenticate(_:)`
 # are protocol requirements that also have defaults. Either way a conformer that
-# declares one has taken the operation off the wire.
-readonly GUARDED_METHODS="authenticate setPassword enablePasswordProtection disablePasswordProtection readProtectionState readLockState enableProtection disableProtection permanentLock"
+# declares one has taken the operation off the wire. The four DESFire names
+# (2026-10-30) are Format's and Remove NDEF setup's DESFire path and the scan's
+# reading of a DESFire, which create, wipe and judge a card's applications.
+readonly GUARDED_METHODS="authenticate setPassword enablePasswordProtection disablePasswordProtection readProtectionState readLockState enableProtection disableProtection permanentLock readDESFireNDEFState setUpDESFireNDEF removeDESFireNDEF checkDESFireNDEFRemovable"
 
 # Matches a line that DECLARES a ConnectedTag conformance, which is a very
 # different thing from a line that mentions the name. The obvious filter,

@@ -473,8 +473,8 @@
 				INFOPLIST_FILE = HexNFC/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hex NFC";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NFCReaderUsageDescription = "Hex NFC reads and writes NFC tags only when you tap one. Tag contents stay on your device unless you choose to send a station name.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Hex NFC uses the camera to scan QR codes you can convert into NFC records. Frames are processed on-device.";
+				INFOPLIST_KEY_NFCReaderUsageDescription = "Hex NFC reads and writes NFC tags only when you tap one. Tag contents stay on your device unless you turn on iCloud sync or choose to send a station name.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Hex NFC uses the camera to scan QR codes you can convert into NFC records and to read the details on a passport's photo page. Frames are processed on-device and never saved.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -483,7 +483,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = pro.hex.nfc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -511,8 +511,8 @@
 				INFOPLIST_FILE = HexNFC/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hex NFC";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NFCReaderUsageDescription = "Hex NFC reads and writes NFC tags only when you tap one. Tag contents stay on your device unless you choose to send a station name.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Hex NFC uses the camera to scan QR codes you can convert into NFC records. Frames are processed on-device.";
+				INFOPLIST_KEY_NFCReaderUsageDescription = "Hex NFC reads and writes NFC tags only when you tap one. Tag contents stay on your device unless you turn on iCloud sync or choose to send a station name.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Hex NFC uses the camera to scan QR codes you can convert into NFC records and to read the details on a passport's photo page. Frames are processed on-device and never saved.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -521,7 +521,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = pro.hex.nfc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -543,7 +543,7 @@
 				DEVELOPMENT_TEAM = 6VJNNBLSVN;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = pro.hex.nfc.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -565,7 +565,7 @@
 				DEVELOPMENT_TEAM = 6VJNNBLSVN;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = pro.hex.nfc.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -585,7 +585,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6VJNNBLSVN;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = pro.hex.nfc.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -605,7 +605,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6VJNNBLSVN;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = pro.hex.nfc.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;

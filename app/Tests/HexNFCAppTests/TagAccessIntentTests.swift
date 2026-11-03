@@ -114,6 +114,7 @@ final class OperationsAccessIntentTests: XCTestCase {
         let table: [(OperationsFlowModel.Operation, TagAccessIntent)] = [
             (.erase, .writesDataArea),
             (.format, []),
+            (.removeNDEFSetup, []),
             (.permanentLock, .writesConfigPages),
             (.enableProtection(pending), .writesConfigPages),
             (.disableProtection, .writesConfigPages),
@@ -130,7 +131,7 @@ final class OperationsAccessIntentTests: XCTestCase {
 
         // The census. If this number moves, a case was added and the table
         // above has to grow with it.
-        XCTAssertEqual(table.count, 7, "an Operation was added without stating its access intent")
+        XCTAssertEqual(table.count, 8, "an Operation was added without stating its access intent")
     }
 
     /// The two operations whose current behaviour this table contradicts, named

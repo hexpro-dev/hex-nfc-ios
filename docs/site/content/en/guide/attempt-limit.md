@@ -12,7 +12,7 @@ tags:
 An attempt limit tells a password-protected tag how many wrong passwords to
 take, and Hex NFC writes that number to the tag from your iPhone. Set it to 3,
 and the tag accepts three wrong tries; the try after that stops it accepting its
-password at all. From then on the protection can never be removed, and the
+password for good. From then on the protection can never be removed, and the
 protected memory can never be rewritten. There is no way back.
 
 Before you start:
@@ -46,8 +46,8 @@ when you protected the tag.
 
 ## Set the attempt limit
 
-::::steps
-:::step[Scan the tag]
+:::::steps
+::::step[Scan the tag]
 In Hex NFC, on the home screen, tap **Scan**, then hold the tag against the top
 of your iPhone. What the tag holds opens on the Tag screen. The card at the top
 is headed with the chip's name. The **Protection** card sits directly under it,
@@ -62,33 +62,32 @@ shows "Tag is protected" and asks for the password. Enter it, then tap **Unlock
 reads "Password · read + write". That unlock presents the password to the tag,
 so a wrong entry spends one of the tries this page is about.
 [Scan a tag](scan-a-tag.md#unlock-a-protected-tag) covers the unlock in full.
-:::
+::::
 
-:::step[Open the attempt limit screen]
+::::step[Open the attempt limit screen]
 On the Tag screen, tap the menu button at the top right, beside **Write**, then tap
 **Operations…**. On the Operations screen, tap **Attempt limit** in the
 **Dangerous Actions** card.
-:::
+::::
 
-:::step[Enter the password the tag holds now]
-Enter the tag's password in **Current password (4 bytes)**, as hex, with or
-without `:` separators.
-:::
-
-:::step[Choose how many wrong tries to allow]
+::::step[Choose how many wrong tries to allow]
 The row reads **Allow 3 wrong tries**, and its number changes as you press the
 stepper beside it. Choose any number from 1 to 7. It starts at 3. The stepper
 has no setting for none, so this screen can change the limit a tag carries but
 never take it off. Removing the tag's password clears the limit with it, which
 needs a password the tag still accepts.
-:::
 
-:::step[Tap Continue]
-Tap **Continue**. The password field and the stepper stop taking changes, and
-the screen asks for the first tap.
+:::figure[The **Attempt limit** screen opens on a limit of 3, with the stepper beside the row and **Continue** below it.]
+![The Attempt limit screen: a warning about what happens after too many wrong tries, the Allow 3 wrong tries row with its minus and plus stepper, and the Continue button.](../../../assets/operations-attempt-limit--form.png)
 :::
+::::
 
-:::step[Hold the tag for the operation's first tap]
+::::step[Tap Continue]
+Tap **Continue**. The stepper stops taking changes, and the screen asks for the
+first tap.
+::::
+
+::::step[Hold the tag for the operation's first tap]
 Tap **Set the attempt limit**, then hold the tag against the top of your iPhone.
 This tap reads the tag's UID and the limit the tag is already set to.
 
@@ -96,28 +95,34 @@ Closing the iOS sheet before you hold a tag takes you back to the stepper and
 **Continue**, so you can pick a different limit. If the sheet closes by itself
 with no tag against your iPhone, the screen reads "No tag found" with **Try
 again** and **Start over**.
-:::
+::::
 
-:::step[Type the tag's UID]
-Type the UID shown on the screen into the field beside it.
-:::
+::::step[Enter the password and type the tag's UID]
+A card headed "Tag is protected" asks for the password the tag holds now. Enter
+it in **Tag password (4 bytes)**, as hex, with or without `:` separators. Then
+type the UID shown on the screen into the field beside it.
 
-:::step[Hold the same tag for the second tap]
+:::figure[The password goes in the "Tag is protected" card, and the UID goes in the card below it, above **Set the attempt limit**.]
+![The screen after the first tap. It reads This tag has no attempt limit set, above a Tag is protected card with an empty password field, then the UID beside an empty field.](../../../assets/operations-attempt-limit--readout.png)
+:::
+::::
+
+::::step[Hold the same tag for the second tap]
 Tap **Set the attempt limit**, then hold the tag against the top of your iPhone
 again. The app writes the new limit and reads it back. The screen reports "This
 tag is now set to allow 3 wrong tries."
 
 Below that it adds "One more wrong try after that and it stops accepting its
 password for good."
-:::
 ::::
+:::::
 
 ## What the app reports between the taps
 
 The first tap reads the tag's own settings, so the screen says what the tag
 carries before you type its UID. It reports one of three things:
 
-- "This tag has no attempt limit set." No number of wrong tries can lock it.
+- "This tag has no attempt limit set." No number of wrong tries can stop it accepting its password.
 - "This tag is already set to allow 3 wrong tries." The number is the one the tag
   holds, and the new limit replaces it.
 - "This tag is read-protected, so the limit it holds now can't be read until its
@@ -162,9 +167,11 @@ has an attempt limit set, and every wrong try counts against it. Check the
 password before trying again."
 
 Both mean the same thing for your next move: find the right password before you
-hold the tag again. A run that ends this way leaves **Start over** on the
-screen, which hands the form back rather than sending the refused password a
-second time. Once a tag has had more wrong tries than it allows, nothing opens
+hold the tag again. Either message can take the place of the prompt on the
+"Tag is protected" card. Its field starts empty, so the refused password is not
+sent a second time unless you type it. A run that ends on a failure instead
+leaves **Start over** on the screen, which hands the form back and asks for the
+password again. Once a tag has had more wrong tries than it allows, nothing opens
 it, and its protected memory stays protected for good.
 
 ## See also

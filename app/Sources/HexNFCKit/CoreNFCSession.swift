@@ -300,6 +300,22 @@ extension CoreNFCSession: NFCTagReaderSessionDelegate {
             // the first pass decoded.
             if skipIdentification {
                 NFCTrace.shared.note("identification skipped by request", label: "connect")
+                // Except the health device check. It is only SELECT and READ
+                // BINARY, nothing the skip exists to avoid, and an insulin pen
+                // handed up unidentified would get the generic command set,
+                // writes included. See `identifyHealthDeviceOnly`.
+                if case .iso7816(let iso) = first {
+                    Task {
+                        let health = await ISO7816TagIdentifier().identifyHealthDeviceOnly(iso)
+                        self.resume(with: CoreNFCConnectedTag(
+                            tag: first,
+                            chip: health?.profile,
+                            unidentifiedReport: nil,
+                            healthDevice: health?.healthDevice
+                        ))
+                    }
+                    return
+                }
                 resume(with: CoreNFCConnectedTag(tag: first, chip: nil, unidentifiedReport: nil))
                 return
             }
@@ -368,7 +384,8 @@ extension CoreNFCSession: NFCTagReaderSessionDelegate {
                     self.resume(with: CoreNFCConnectedTag(
                         tag: first,
                         chip: identified.profile,
-                        unidentifiedReport: identified.report
+                        unidentifiedReport: identified.report,
+                        healthDevice: identified.healthDevice
                     ))
                     return
                 }
@@ -475,7 +492,7 @@ extension CoreNFCSession: NFCTagReaderSessionDelegate {
         if case .miFare(let mifare) = tag, mifare.mifareFamily == .unknown {
             return TagError(
                 kind: .protocolError,
-                userMessage: "This looks like a MIFARE Classic tag. iPhone can detect it but can't read its encrypted memory. IOS doesn't expose the MIFARE Classic keys any app would need.",
+                userMessage: "This looks like a MIFARE Classic tag. iPhone can detect it but can't read its encrypted memory. iOS doesn't expose the MIFARE Classic keys any app would need.",
                 diagnostics: "connect failed on miFare/family=unknown "
                     + "(MIFARE Classic CRYPTO1 not available on iOS): \(underlying.localizedDescription)"
             )
@@ -493,7 +510,16 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
     public let uid: Data
     public let chip: ChipProfile?
     public let unidentifiedReport: UnidentifiedChipReport?
-    public let capabilities: TagCapability
+    private let declaredCapabilities: TagCapability
+
+    /// What the card answered the last time its NDEF status was asked, this
+    /// activation. Every `queryNDEFStatus` this tag sends records it, the one
+    /// inside `readNDEF` included, so a scan learns it at no extra cost.
+    private var observedNDEFAccess: NDEFAccess?
+
+    public var capabilities: TagCapability {
+        .resolved(declared: declaredCapabilities, chip: chip, ndefAccess: observedNDEFAccess)
+    }
 
     /// Set once a `PWD_AUTH` has succeeded this session. While authenticated,
     /// Type-2 NDEF reads go through raw page commands rather than the
@@ -514,10 +540,17 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
     /// inside secure messaging: the Type-4 analogue of `type2Session`.
     public let ev2Session = EV2SessionHolder()
     public let ultralightCSession = UltralightCSessionHolder()
+    public let healthDevice: PHDAssociation?
 
-    public init(tag: NFCTag, chip: ChipProfile? = nil, unidentifiedReport: UnidentifiedChipReport? = nil) {
+    public init(
+        tag: NFCTag,
+        chip: ChipProfile? = nil,
+        unidentifiedReport: UnidentifiedChipReport? = nil,
+        healthDevice: PHDAssociation? = nil
+    ) {
         nfcTag = tag
         self.unidentifiedReport = unidentifiedReport
+        self.healthDevice = healthDevice
         let identifier: Data = switch tag {
         case .miFare(let mifare):
             mifare.identifier
@@ -539,7 +572,32 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
         // Capabilities come from the identified profile. An unidentified tag
         // falls back to NDEF read/write + raw, which every supported family can
         // at least attempt.
-        capabilities = chip?.capabilities ?? [.ndefRead, .ndefWrite, .rawTransceive]
+        declaredCapabilities = chip?.capabilities ?? [.ndefRead, .ndefWrite, .rawTransceive]
+    }
+
+    public func queryNDEFAccess() async throws -> NDEFAccess {
+        let target: NFCNDEFTag? = switch nfcTag {
+        case .miFare(let mifare): mifare
+        case .iso15693(let iso): iso
+        case .iso7816(let iso): iso
+        case .feliCa(let felica): felica
+        @unknown default: nil
+        }
+        guard let target else { return .notSupported }
+        return try await withCheckedThrowingContinuation { continuation in
+            NFCTrace.shared.note("queryNDEFStatus", label: "NDEF access")
+            target.queryNDEFStatus { status, _, error in
+                if let error {
+                    NFCTrace.shared.failure("queryNDEFStatus: \(error.localizedDescription)", label: "NDEF access")
+                    continuation.resume(throwing: TagError.tagLost(diagnostics: "queryNDEFStatus failed: \(error)"))
+                    return
+                }
+                let access = NDEFAccess(status)
+                self.observedNDEFAccess = access
+                NFCTrace.shared.note("status=\(access)", label: "NDEF access")
+                continuation.resume(returning: access)
+            }
+        }
     }
 
     /// CoreNFC reports a *formatted-but-empty* NDEF tag — a factory-fresh
@@ -636,6 +694,8 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
                     ))
                     return
                 }
+                // Kept, so a DESFire's capabilities say what this read found.
+                self.observedNDEFAccess = NDEFAccess(status)
                 guard status != .notSupported else {
                     // Says what nfcd answered, and nothing about why. The old
                     // note read "(no Capability Container)", which is an
@@ -678,6 +738,15 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
         default: nil
         }
         guard let tag = ndefTag else { throw TagError.capabilityUnsupported(.ndefRead) }
+        // A DESFire that hosts the NDEF application answers the declared NDEF
+        // AID, so iOS hands it over on this path rather than `.miFare`. Its Read
+        // and Write come from the card's own NDEF status
+        // (`ChipProfile.ndefDependsOnCard`), which the `.miFare` path records on
+        // every read. Without the same query here, a rescan of a set-up card
+        // showed "Raw commands" alone (seen on an EV3, 2026-10-31).
+        if chip?.ndefDependsOnCard == true, try await queryNDEFAccess() == .notSupported {
+            throw TagError.capabilityUnsupported(.ndefRead)
+        }
         return try await withCheckedThrowingContinuation { continuation in
             tag.readNDEF { message, error in
                 if let error {
@@ -705,6 +774,7 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
     }
 
     public func writeNDEF(_ records: [NDEFRecord]) async throws {
+        try refuseIfHealthDevice(.ndefWrite)
         // A protected NTAG424 we've authenticated past is written via the live
         // EV2 session (secure messaging) — the high-level NDEF write can't carry
         // it. Only engaged once a 424 session exists.
@@ -737,6 +807,10 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
         // .miFare transport (NTAG424 plain NDEF) keep the high-level NDEF write,
         // with the read path's empty-write forgiveness for unformatted tags (e.g.
         // erasing a factory ICODE SLIX2 reports "not NDEF formatted").
+        //
+        // A DESFire takes this path too, but only once its card has said it has
+        // a writable NDEF application.
+        try await requireCardNDEFWrite()
         let payloads = try records.map(NDEFCodec.payload(from:))
         let nfcRecords = payloads.map(CoreNFCSession.nfcPayload(from:))
         let message = NFCNDEFMessage(records: nfcRecords)
@@ -767,6 +841,7 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
     }
 
     public func transceive(_ command: RawCommand) async throws -> Data {
+        try refuseIfHealthDevice(.rawTransceive)
         // Frames carrying credential material are masked in the trace (opcode
         // kept, payload redacted) across all three families.
         let secret = isSecretFrame(command.bytes)
@@ -1330,6 +1405,7 @@ public final class CoreNFCConnectedTag: ConnectedTag, @unchecked Sendable {
     }
 
     public func writeMemory(at offset: Int, bytes: Data) async throws {
+        try refuseIfHealthDevice(.memoryWrite)
         try require(.memoryWrite)
         guard offset >= 0, offset % T2.pageSize == 0 else {
             throw TagError.protocolError("write offset must be page-aligned", diagnostics: "offset=\(offset)")
@@ -1509,6 +1585,17 @@ public final class CoreNFCSessionFactory: TagSessionFactory, @unchecked Sendable
     public init() {}
     public func makeSession() -> TagSession {
         CoreNFCSession(skipIdentification: skipIdentification)
+    }
+}
+
+extension NDEFAccess {
+    init(_ status: NFCNDEFStatus) {
+        switch status {
+        case .readWrite: self = .readWrite
+        case .readOnly: self = .readOnly
+        case .notSupported: self = .notSupported
+        @unknown default: self = .notSupported
+        }
     }
 }
 

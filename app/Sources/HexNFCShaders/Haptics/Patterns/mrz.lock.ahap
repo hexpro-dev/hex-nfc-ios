@@ -1,0 +1,51 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "Hex NFC",
+    "Pattern": "mrz.lock",
+    "Description": "Passport details locked in from the camera: a crisp click as the key snaps into place, a deeper detent 70 ms behind it, then a short settle that fades with the tick."
+  },
+  "Pattern": [
+    {
+      "Event": {
+        "Time": 0.000,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.75 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.95 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.070,
+        "EventType": "HapticTransient",
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 1.00 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.50 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.080,
+        "EventType": "HapticContinuous",
+        "EventDuration": 0.220,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.30 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.30 }
+        ]
+      }
+    },
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.080,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.00, "ParameterValue": 0.00 },
+          { "Time": 0.22, "ParameterValue": -0.30 }
+        ]
+      }
+    }
+  ]
+}

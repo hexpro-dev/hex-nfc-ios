@@ -33,6 +33,12 @@ extension OperationsFlowModel.Operation {
         case .format:
             []
 
+        // A DESFire's applications sit behind no page gate this app reads or
+        // arms. Whether the factory key may be presented is decided from the
+        // card's own key settings and version, in the operation itself.
+        case .removeNDEFSetup:
+            []
+
         case .permanentLock, .enableProtection, .disableProtection, .setAttemptLimit:
             .writesConfigPages
 
@@ -47,7 +53,8 @@ public extension OperationsFlowModel.Operation {
     /// typed-UID confirmation gate.
     var requiresUIDConfirmation: Bool {
         switch self {
-        case .erase, .format, .permanentLock, .enableProtection, .disableProtection, .setAttemptLimit:
+        case .erase, .format, .removeNDEFSetup, .permanentLock, .enableProtection, .disableProtection,
+             .setAttemptLimit:
             true
 
         case .memoryDump:
@@ -68,7 +75,8 @@ public extension OperationsFlowModel.Operation {
     /// `.memoryDump` is a pure read, so there is nothing to verify.
     var verifies: Bool {
         switch self {
-        case .erase, .format, .permanentLock, .enableProtection, .disableProtection, .setAttemptLimit:
+        case .erase, .format, .removeNDEFSetup, .permanentLock, .enableProtection, .disableProtection,
+             .setAttemptLimit:
             true
 
         case .memoryDump:
@@ -80,6 +88,7 @@ public extension OperationsFlowModel.Operation {
         switch self {
         case .erase: String(localized: "Erase tag")
         case .format: String(localized: "Format tag")
+        case .removeNDEFSetup: String(localized: "Remove NDEF setup")
         case .permanentLock: String(localized: "Permanently lock")
         case .enableProtection: String(localized: "Protect with password")
         case .disableProtection: String(localized: "Remove password")

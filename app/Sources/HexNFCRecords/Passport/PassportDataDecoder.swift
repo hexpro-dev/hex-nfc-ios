@@ -20,7 +20,7 @@ public enum PassportDataDecoder {
         static let telephone: UInt64 = 0x5F12
         static let profession: UInt64 = 0x5F13
         static let title: UInt64 = 0x5F14
-        static let otherName: UInt64 = 0x5F15
+        static let otherName: UInt64 = 0x5F0F
         // DG12
         static let issuingAuthority: UInt64 = 0x5F19
         static let dateOfIssue: UInt64 = 0x5F26
@@ -28,9 +28,9 @@ public enum PassportDataDecoder {
 
     /// Assemble a passport from a map of data-group number → raw file bytes.
     /// Returns `nil` only when DG1 is missing or unparseable — everything else
-    /// is optional.
-    public static func decode(dataGroups: [Int: Data]) -> PassportData? {
-        guard let dg1 = dataGroups[1], var data = decodeDG1(dg1) else { return nil }
+    /// is optional. `accessKey` is the key the chip accepted; see `decodeDG1`.
+    public static func decode(dataGroups: [Int: Data], accessKey: PassportMRZ? = nil) -> PassportData? {
+        guard let dg1 = dataGroups[1], var data = decodeDG1(dg1, accessKey: accessKey) else { return nil }
 
         if let dg2 = dataGroups[2] {
             data.faceImage = decodeDG2(dg2)
@@ -56,13 +56,29 @@ public enum PassportDataDecoder {
 
     // MARK: - DG1 (MRZ)
 
-    static func decodeDG1(_ bytes: Data) -> PassportData? {
+    /// Decode DG1. Where the MRZ is not an ICAO layout and leaves the document
+    /// number or either date blank, `accessKey` fills the gap. That is not a
+    /// guess: the chip completed BAC or PACE only because its own document
+    /// number, birth date and expiry are the ones the key was derived from.
+    static func decodeDG1(_ bytes: Data, accessKey: PassportMRZ? = nil) -> PassportData? {
         guard
             let root = try? BERTLV.parseFirst(bytes),
             let mrzNode = root.firstDescendant(tag: Tag.dg1MRZ),
             let mrzString = text(mrzNode.value),
-            let fields = MRZParser.parse(mrzString)
+            var fields = MRZParser.parse(mrzString)
         else { return nil }
+
+        if !fields.layout.isICAO, let key = accessKey {
+            if fields.documentNumber.isEmpty {
+                fields.documentNumber = String(key.documentNumberField.reversed().drop { $0 == "<" }.reversed())
+            }
+            if fields.dateOfBirth.isEmpty {
+                fields.dateOfBirth = key.dateOfBirth
+            }
+            if fields.dateOfExpiry.isEmpty {
+                fields.dateOfExpiry = key.dateOfExpiry
+            }
+        }
 
         return PassportData(
             documentType: fields.documentType,
@@ -75,7 +91,8 @@ public enum PassportDataDecoder {
             sex: fields.sex,
             dateOfExpiry: fields.dateOfExpiry,
             optionalData: fields.optionalData,
-            rawMRZ: fields.raw
+            rawMRZ: fields.raw,
+            mrzLayout: fields.layout
         )
     }
 
@@ -139,13 +156,15 @@ public enum PassportDataDecoder {
         guard let root = try? BERTLV.parseFirst(bytes) else { return }
         bio.fullName = humanName(root.firstDescendant(tag: Tag.fullName)?.value)
         bio.personalNumber = trimmedText(root.firstDescendant(tag: Tag.personalNumber)?.value)
-        bio.fullDateOfBirth = trimmedText(root.firstDescendant(tag: Tag.fullDOB)?.value)
+        bio.fullDateOfBirth = dateText(root.firstDescendant(tag: Tag.fullDOB)?.value)
         bio.placeOfBirth = humanName(root.firstDescendant(tag: Tag.placeOfBirth)?.value)
         bio.permanentAddress = humanName(root.firstDescendant(tag: Tag.address)?.value)
         bio.telephone = trimmedText(root.firstDescendant(tag: Tag.telephone)?.value)
         bio.profession = humanName(root.firstDescendant(tag: Tag.profession)?.value)
         bio.title = humanName(root.firstDescendant(tag: Tag.title)?.value)
-        // "Other names" can appear once (0x5F15) or grouped; collect all.
+        // "Other name" (0x5F0F, Doc 9303-10 Table 71) repeats inside an A0
+        // template, once per name; collect all. It was read from 0x5F15 until
+        // 2026-10-27, which is the personal summary, so other names never showed.
         bio.otherNames = collectAll(tag: Tag.otherName, in: root)
             .compactMap { humanName($0) }
             .filter { !$0.isEmpty }
@@ -154,7 +173,7 @@ public enum PassportDataDecoder {
     private static func applyDG12(_ bytes: Data, into bio: inout PassportBiographical) {
         guard let root = try? BERTLV.parseFirst(bytes) else { return }
         bio.issuingAuthority = humanName(root.firstDescendant(tag: Tag.issuingAuthority)?.value)
-        bio.dateOfIssue = trimmedText(root.firstDescendant(tag: Tag.dateOfIssue)?.value)
+        bio.dateOfIssue = dateText(root.firstDescendant(tag: Tag.dateOfIssue)?.value)
     }
 
     // MARK: - Text helpers
@@ -167,6 +186,19 @@ public enum PassportDataDecoder {
         guard let data, let s = text(data)?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty
         else { return nil }
         return s
+    }
+
+    /// A DG11 or DG12 date: eight ASCII digits `YYYYMMDD`, or the same in four
+    /// bytes of packed BCD, which Doc 9303-10 recommends readers accept and
+    /// some French and Belgian chips carry. Four ASCII digits (a year alone)
+    /// stay text: their nibbles are digits too, so they are checked first.
+    private static func dateText(_ data: Data?) -> String? {
+        guard let data else { return nil }
+        let isASCIIDigits = data.allSatisfy { (0x30 ... 0x39).contains($0) }
+        if data.count == 4, !isASCIIDigits, data.allSatisfy({ $0 >> 4 <= 9 && $0 & 0x0F <= 9 }) {
+            return data.map { String(format: "%02X", $0) }.joined()
+        }
+        return trimmedText(data)
     }
 
     /// Decode a name-like field and turn `<` filler into readable separators.

@@ -229,8 +229,30 @@ public final class EditFlowModel {
         // Capability Container" notice and leaves `.unreadableDataArea` alone;
         // the state it moves to is `.unknown`, because what the data area holds
         // is now genuinely unestablished.
-        if observation.formatted == true, tag?.formatState == .noCapabilityContainer {
+        // A DESFire's NDEF application is the same kind of fact, one family
+        // over: the setup read it back, so the "not set up" notice goes too.
+        if observation.formatted == true,
+           tag?.formatState == .noCapabilityContainer || tag?.formatState == .noNDEFApplication
+        {
             tag?.formatState = .unknown
+            changed = true
+        }
+
+        // A DESFire's Read and Write belong to the card, and Format and Remove
+        // NDEF setup are what change them. The "Supports" line was worked out at
+        // scan time, so without this it kept saying "Raw commands" after a
+        // setup, and offered Write after a removal.
+        if let access = observation.ndefAccess,
+           let profile = ChipCatalog.all.first(where: { $0.displayName == tag?.chipName }),
+           profile.ndefDependsOnCard
+        {
+            let capabilities = TagCapability.resolved(
+                declared: profile.capabilities, chip: profile, ndefAccess: access
+            )
+            tag?.capabilitySummary = ScannedTagInfo.capabilitySummary(fromRaw: capabilities.rawValue)
+            if access == .notSupported {
+                tag?.formatState = .noNDEFApplication
+            }
             changed = true
         }
 
@@ -451,6 +473,21 @@ public final class EditFlowModel {
         if case .replace(let written) = dataArea {
             original = written
         }
+    }
+
+    /// `true` when `apply(observation)` would empty a record list that is
+    /// showing records: an erase read back onto an editor with no edits in it.
+    ///
+    /// The editor takes such a reading with animations off. Emptying the list
+    /// swaps it for the empty state, and a list swapped out under an animation
+    /// stays mounted, frozen, through whatever sheet transition comes next. That
+    /// is what crashed on iOS 27 after a swipe-delete (see
+    /// `TagEditorSheet.delete(id:)`); an erase has no swipe behind it, so this
+    /// is a precaution. It does not check the reading's identity: a reading
+    /// `apply` then refuses changes nothing, so the animation it loses was never
+    /// going to run.
+    public func emptiesRecords(applying observation: TagObservation) -> Bool {
+        !records.isEmpty && !isDirty && observation.records?.isEmpty == true
     }
 
     /// Whether a reading is about this editor's tag, for the sheet deciding
@@ -677,7 +714,13 @@ public struct ScannedTagInfo: Equatable, Sendable {
             labels.append(String(localized: "Read"))
         }
         if caps.contains(.ndefWrite) {
-            labels.append(String(localized: "Write"))
+            // Its own key: "Write" is also the editor's button, a verb, and this
+            // list is nouns ("Lectura, Escritura", not "Lectura, Escribir").
+            labels.append(String(
+                localized: "capability.write",
+                defaultValue: "Write",
+                comment: "A capability in the tag card's Supports list: a noun, not the Write button's verb."
+            ))
         }
         if caps.contains(.passwordAuth) {
             labels.append(String(localized: "Password"))

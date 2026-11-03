@@ -78,10 +78,24 @@ public protocol ChipSimulator: AnyObject {
     ///
     /// Chips with no such state inherit the default and do nothing.
     func beginActivation()
+
+    /// What iOS's `queryNDEFStatus` would report for this card. Consulted only
+    /// for a chip whose NDEF support belongs to the card
+    /// (`ChipProfile.ndefDependsOnCard`); every other simulator inherits the
+    /// default, which answers from the profile.
+    var ndefAccess: NDEFAccess { get }
 }
 
 public extension ChipSimulator {
     func beginActivation() {}
+
+    var ndefAccess: NDEFAccess {
+        let declared = profile?.capabilities ?? []
+        if declared.contains(.ndefWrite) {
+            return .readWrite
+        }
+        return declared.contains(.ndefRead) ? .readOnly : .notSupported
+    }
 
     func enablePasswordProtection(
         password: Data,

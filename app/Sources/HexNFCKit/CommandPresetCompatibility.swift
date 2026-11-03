@@ -112,7 +112,9 @@ extension TagFamily {
             case .ntag424DNA, .desfireGeneric, .desfireEV1, .desfireEV2, .desfireEV3:
                 .desfire
 
-            case .ePassport, .unknown:
+            // A health device is refused raw commands outright, so no preset
+            // family may ever be offered for one.
+            case .ePassport, .personalHealthDevice, .unknown:
                 nil
             }
 

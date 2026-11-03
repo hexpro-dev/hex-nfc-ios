@@ -11,6 +11,10 @@
 # Bump XCODE_MAJOR deliberately, in step with the local toolchain. Building
 # with an SDK older than the App Store minimum gets the upload rejected, which
 # is the failure this exists to prevent.
+#
+# Move it together with EXPECTED_MAJOR in app/ci_scripts/ci_post_clone.sh. That
+# one pins Xcode Cloud, which builds the binary that ships, and it is the pin
+# that was missing when 1.0 went out compiled by an Xcode nobody had tested.
 
 set -euo pipefail
 

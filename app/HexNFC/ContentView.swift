@@ -44,7 +44,8 @@ struct ContentView: View {
             sessionFactory: factory,
             library: library,
             settings: settings,
-            storeFallback: fallback
+            storeFallback: fallback,
+            reviewPrompt: ReviewPromptModel(mode: ReviewPromptModel.mode(forArguments: CommandLine.arguments))
         )
     }
 }

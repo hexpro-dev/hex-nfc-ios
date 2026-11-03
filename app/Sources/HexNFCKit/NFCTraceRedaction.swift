@@ -9,8 +9,8 @@ import Foundation
 /// and the in-app "All NFC traffic" tab, which is a poor thing to take on faith.
 ///
 /// Covers all three families: Type-2 `PWD_AUTH` (`0x1B`) and the WRITEs that put
-/// the PWD and PACK on the tag, Type-4 EV2 auth + ChangeKey cryptogram (CLA
-/// `0x90`, INS `71/AF/C4`), Type-5 SLIX `SET/WRITE_PASSWORD` + `ENABLE_PRIVACY` /
+/// the PWD and PACK on the tag, Type-4 DESFire-family auth + ChangeKey cryptogram
+/// (CLA `0x90`, INS `71/1A/0A/AA/AF/C4`), Type-5 SLIX `SET/WRITE_PASSWORD` + `ENABLE_PRIVACY` /
 /// `DESTROY` (`B3/B4/BA/B9`), the Ultralight C 3DES handshake and its plaintext
 /// key-page writes, and the eMRTD access-control frames.
 ///
@@ -78,7 +78,13 @@ public enum NFCTraceRedaction {
         }
         guard bytes.count >= 2 else { return false }
         let second = bytes[bytes.startIndex + 1]
-        if first == 0x90, [0x71, 0xAF, 0xC4].contains(second) {
+        // Wrapped DESFire-family authentication, whatever the chip: EV2 (`71`),
+        // AuthenticateISO (`1A`), legacy (`0A`), AES (`AA`), the continuation
+        // that carries the reader's cryptogram (`AF`), and ChangeKey (`C4`).
+        // Remove NDEF setup presents a DESFire's factory key with `1A`; the key
+        // is public, but the exchange is still the input to an attack on a key
+        // that is not, and a frame cannot tell which it is carrying.
+        if first == 0x90, [0x71, 0x1A, 0x0A, 0xAA, 0xAF, 0xC4].contains(second) {
             return true
         }
         if [0xB3, 0xB4, 0xB9, 0xBA].contains(second) {

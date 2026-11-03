@@ -23,8 +23,9 @@ import Foundation
 /// know it is to read the Capability Container.
 public enum TagFormatState: Equatable, Sendable {
     /// Nothing was established. The read was refused on a chip family that has
-    /// no NDEF area to format at all (DESFire, FeliCa), or the Capability
-    /// Container was never read. Renders nothing: silence is the honest answer.
+    /// no NDEF area to format at all (FeliCa, a transit or access DESFire), or
+    /// the Capability Container was never read. Renders nothing: silence is the
+    /// honest answer.
     case unknown
 
     /// The NDEF read came back rather than being refused. Zero records still
@@ -48,10 +49,17 @@ public enum TagFormatState: Equatable, Sendable {
     /// formatting has nothing to do here. Rewriting the data area is the repair.
     case unreadableDataArea
 
+    /// A MIFARE DESFire with no NDEF application, read from the card rather
+    /// than inferred from the refused NDEF read: it holds no applications at
+    /// all, or only this app's own setup, left unfinished. Format gives it one.
+    /// A DESFire with any other application (a transit card) is `.unknown`,
+    /// because Format will not touch it and naming a repair would be a dead end.
+    case noNDEFApplication
+
     /// `true` when the user has something to fix. Drives whether a notice shows
     /// at all, so `.unknown` and `.readable` both render nothing.
     public var needsAttention: Bool {
-        self == .noCapabilityContainer || self == .unreadableDataArea
+        self == .noCapabilityContainer || self == .unreadableDataArea || self == .noNDEFApplication
     }
 
     /// Whether a *completed* NDEF read on this chip family proves the tag's

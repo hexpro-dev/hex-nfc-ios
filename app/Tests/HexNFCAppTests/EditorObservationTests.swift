@@ -238,6 +238,54 @@ final class EditorObservationTests: XCTestCase {
         XCTAssertTrue(model.isDirty, "and the write still knows there is something to write")
     }
 
+    /// The editor applies a reading that empties its record list without
+    /// animation, so the emptied List cannot linger through the Operations
+    /// sheet's dismissal. These pin when that applies and when it does not.
+    @MainActor
+    func test_anEraseReadingOnAnUneditedListEmptiesIt() {
+        let model = editor()
+        model.records = [.uri(URIRecord(uri: "https://hex.pro"))]
+        model.markClean()
+
+        let elsewhere = TagObservation(uid: otherUID, records: [])
+        XCTAssertTrue(model.emptiesRecords(applying: elsewhere), "identity is not its question")
+        XCTAssertFalse(model.apply(elsewhere), "apply refuses another tag's reading")
+        XCTAssertEqual(model.records.count, 1, "so nothing changed for the lost animation to show")
+
+        let erase = TagObservation(uid: uid, records: [])
+        XCTAssertTrue(model.emptiesRecords(applying: erase))
+        model.apply(erase)
+        XCTAssertTrue(model.records.isEmpty, "and apply does empty it")
+    }
+
+    @MainActor
+    func test_readingsThatLeaveRecordsShowingAreNotEmptying() {
+        let model = editor()
+        model.records = [.uri(URIRecord(uri: "https://hex.pro"))]
+        model.markClean()
+        XCTAssertFalse(
+            model.emptiesRecords(applying: TagObservation(uid: uid, protection: TagProtection.none)),
+            "a reading with no records field leaves the list alone"
+        )
+        XCTAssertFalse(
+            model.emptiesRecords(applying: TagObservation(uid: uid, records: [.uri(URIRecord(uri: "https://a.b"))])),
+            "a reading with records replaces them, it does not empty the list"
+        )
+
+        model.records.append(.uri(URIRecord(uri: "https://apps.hex.pro")))
+        XCTAssertTrue(model.isDirty)
+        XCTAssertFalse(
+            model.emptiesRecords(applying: TagObservation(uid: uid, records: [])),
+            "an edit in progress survives the erase reading, so nothing empties"
+        )
+
+        let empty = editor()
+        XCTAssertFalse(
+            empty.emptiesRecords(applying: TagObservation(uid: uid, records: [])),
+            "a list that is already empty has no List to swap out"
+        )
+    }
+
     @MainActor
     func test_aProtectionReadingClearsTheUnknownFlag() {
         let model = editor(protectionIsUnknown: true)

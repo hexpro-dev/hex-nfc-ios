@@ -1,6 +1,6 @@
 # Terms & Conditions
 
-**Effective 7 July 2026**
+**Effective 31 October 2026**
 Ars Vitae Pty Ltd, trading as Hex Pro (Australia)
 
 ## 1. Who we are
@@ -91,7 +91,7 @@ disrupt or abuse the small online services the app talks to.
 We may change, suspend, or retire those online services at any time. The core
 of the app works fully offline.
 
-## 10. Station-name suggestions
+## 10. Suggestions and feedback
 
 If you submit a station name, you grant us a perpetual, worldwide, royalty-free
 licence to use, edit, publish, and redistribute the suggestion, including
@@ -99,11 +99,20 @@ bundling it into future versions of the app and its data files. Submit only
 information you are entitled to share, and do not include personal information
 in the name field.
 
+If you send us feedback from the app, we may use it to answer you and to
+improve the app, without any obligation to you. Do not include personal
+information about anyone else in a feedback message.
+
 ## 11. Third-party services
 
 Optional iCloud sync is provided by Apple under Apple's own terms and privacy
 policy. Banners and links in the app may open external websites, which have
 their own terms.
+
+If you tap an NFC health device, such as an insulin pen, the app shows what
+kind of device it is and may link to an app made by another company that reads
+it. Hex NFC reads no measurements from the device, gives no medical
+information or advice, and is not a medical device.
 
 ## 12. No warranty
 

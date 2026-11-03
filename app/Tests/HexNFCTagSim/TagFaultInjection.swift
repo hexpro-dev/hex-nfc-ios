@@ -594,6 +594,11 @@ public final class FaultInjectingTag: ConnectedTag, @unchecked Sendable {
         inner.type2Session
     }
 
+    public func queryNDEFAccess() async throws -> NDEFAccess {
+        try requirePresence()
+        return try await inner.queryNDEFAccess()
+    }
+
     public func readNDEF() async throws -> Data {
         try requirePresence()
         return try await inner.readNDEF()

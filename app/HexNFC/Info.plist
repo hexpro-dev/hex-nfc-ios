@@ -6,9 +6,15 @@
 	<array>
 		<string>0003</string>
 	</array>
+	<!-- Order matters: iOS SELECTs these in turn and hands the tag over on the
+	     first that answers, so a passport is always delivered on the eMRTD AID.
+	     The NDEF AID reaches Type 4 tags that are not NXP silicon (ST25TA,
+	     Infineon, Android card emulation, NFC health devices), which iOS
+	     otherwise never delivers. See docs/internal/aid-rationale.md. -->
 	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
 	<array>
 		<string>A0000002471001</string>
+		<string>D2760000850101</string>
 	</array>
 	<!-- No ITSAppUsesNonExemptEncryption here, deliberately. The app does use
 	     non-exempt encryption: the Brainpool curve arithmetic and PACE mapping

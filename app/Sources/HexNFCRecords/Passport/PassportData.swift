@@ -84,6 +84,9 @@ public struct PassportData: Hashable, Sendable, Codable, Identifiable {
     public let optionalData: String
     /// The raw MRZ lines, newline-joined, for display and diagnostics.
     public let rawMRZ: String
+    /// The layout DG1 was read as. Outside the ICAO layouts, fields DG1 does
+    /// not carry are empty rather than guessed.
+    public let mrzLayout: MRZParser.Layout
 
     /// --- DG2 (face) ---
     public var faceImage: PassportImage?
@@ -97,6 +100,17 @@ public struct PassportData: Hashable, Sendable, Codable, Identifiable {
     /// Data-group integrity vs the chip's signed security object (EF.SOD).
     /// `nil` when the check could not run (no EF.SOD, or it wouldn't parse).
     public var integrity: PassportIntegrityReport?
+
+    /// The files the reader tried and did not get, by name ("DG2", "EF.SOD").
+    /// Empty when every file the document advertised came back. A `nil` photo
+    /// cannot say this on its own: it reads the same whether the document has
+    /// no DG2 or the passport moved away halfway through it.
+    public var unreadFiles: [String] = []
+
+    /// Whether the read got everything it went for.
+    public var isComplete: Bool {
+        unreadFiles.isEmpty
+    }
 
     /// Stable within a session for `Identifiable`. Uses the random chip UID is
     /// not available here, so the document number + expiry pair is used; these
@@ -117,6 +131,7 @@ public struct PassportData: Hashable, Sendable, Codable, Identifiable {
         dateOfExpiry: String,
         optionalData: String,
         rawMRZ: String,
+        mrzLayout: MRZParser.Layout,
         faceImage: PassportImage? = nil,
         signatureImage: PassportImage? = nil,
         biographical: PassportBiographical? = nil,
@@ -133,6 +148,7 @@ public struct PassportData: Hashable, Sendable, Codable, Identifiable {
         self.dateOfExpiry = dateOfExpiry
         self.optionalData = optionalData
         self.rawMRZ = rawMRZ
+        self.mrzLayout = mrzLayout
         self.faceImage = faceImage
         self.signatureImage = signatureImage
         self.biographical = biographical

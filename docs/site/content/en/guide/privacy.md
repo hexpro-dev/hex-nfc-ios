@@ -1,6 +1,6 @@
 ---
 title: Privacy and your data
-description: What Hex NFC keeps on your iPhone, the three kinds of request it makes to Hex Pro, and what each permission is for.
+description: What Hex NFC keeps on your iPhone, the four kinds of request it makes to Hex Pro, and what each permission is for.
 audience: user
 pageKind: article
 navTitle: Privacy
@@ -11,16 +11,21 @@ tags:
 
 You hold a tag against your iPhone and what it holds appears on screen. That
 reading happens on your iPhone, and the result stays there. Hex NFC has no
-accounts and no analytics, and the three kinds of request it makes to Hex Pro's
-own servers carry nothing about you. The full text of the policy is in the app.
+accounts and no analytics. It makes four kinds of request to Hex Pro's own
+servers. Three carry nothing about you, and the fourth, a feedback message,
+carries only what you choose to send. The full text of the policy is in the app.
 On the Hex NFC home screen, tap the gear button in the top right. Then under
 **Legal** tap **Privacy Policy**.
 
 ## What stays on your iPhone
 
 Your scan history and your saved presets live in a local database on this
-iPhone, and your settings are stored locally too. Deleting an item removes it
-from that database. Deleting the app removes the app's local data with it.
+iPhone, and your settings are stored locally too. So is everything behind the
+card that now and then asks **Loving Hex NFC?**: whether it has asked, how you
+answered, and the count of recent writes and reads that decides when it may ask
+again. [Settings](settings.md#feedback-and-ratings) describes that card. Deleting
+an item removes it from that database. Deleting the app removes the app's local
+data with it.
 
 Tag passwords are held apart from all of that, in the iOS Keychain on the one
 iPhone that set them. A password is never synced, never written into a file you
@@ -62,6 +67,10 @@ iCloud database, which Apple operates and your Apple ID protects. Hex Pro cannot
 read it. Tag passwords stay out of it either way. The switch is in
 [Settings](settings.md).
 
+:::figure[**iCloud sync** stays off until you turn it on, and the line under it says the change waits for the next time you open the app.]
+![The Sync section of Settings. The iCloud sync switch is off, above the line that begins Mirror your presets and history to your iCloud account.](../../../assets/settings--sync-section.png)
+:::
+
 Turning sync off stops the mirroring only once you close Hex NFC and open it
 again, as [Close and reopen the app](settings.md#close-and-reopen-the-app)
 describes. Going back to your iPhone's Home Screen leaves the app running and
@@ -78,9 +87,9 @@ with a reader can read an unprotected tag. Treat what a tag holds as public
 unless you protect it, which [Tag protection](tag-protection.md) explains.
 :::
 
-## The three times the app reaches Hex Pro
+## The four times the app reaches Hex Pro {#when-the-app-reaches-hex-pro}
 
-None of these runs in the background, and none of them carries anything that
+None of these runs in the background. The first three carry nothing that
 identifies you.
 
 - The home screen fetches one public figure about the project's development
@@ -97,6 +106,12 @@ identifies you.
   downloads from a second address and keeps on your iPhone. Everyone sees the
   same banner. No ad network, tracking identifier or personalisation sits
   behind it.
+- A feedback message goes out when you tap **Send** on the **Send Feedback**
+  form. It carries your message, the email address you typed if you gave one,
+  and the four details the form lists under **Sent with your message**: the app
+  version, iOS version, device model and language. It goes to api.hex.pro and
+  on to Hex Pro's feedback inbox, is kept for up to 24 months, and is never used
+  for marketing. Nothing from your tags, scans or history is part of it.
 
 iCloud sync is the other thing that uses the network, and the exception to the
 paragraph above. With it on, your presets and scan history travel between your
@@ -104,13 +119,15 @@ iPhone and Apple in the background. None of that reaches Hex Pro.
 
 Any internet request shows your IP address to the server that answers it. Hex
 Pro keeps short-lived operational logs and does not use an IP address to
-identify or profile anyone.
+identify or profile anyone. A feedback message is stored with a scrambled form
+of your IP address, used only to stop one connection sending too many
+messages, and that is erased within seven days.
 
 ## What each permission is for
 
 Hex NFC asks you for two permissions. NFC is the one it cannot work without,
 and iOS gives you no switch for it. The camera is optional, and iOS asks for it
-the first time you scan a QR code. What either one captures stays on your
+the first time you scan a QR code or a passport's photo page. What either one captures stays on your
 iPhone.
 
 The Privacy Policy in the app describes three more, for contacts, location and
@@ -121,7 +138,7 @@ about them.
 | Permission | What it is used for |
 | :--- | :--- |
 | NFC | Reading and writing tags, only while a scan or write screen is open. |
-| Camera | Scanning a QR code you choose to turn into a record. Frames are never saved or uploaded. |
+| Camera | Scanning a QR code you choose to turn into a record, and reading a passport's photo page when you choose to scan it. Frames are never saved or uploaded. |
 :::
 
 ## What Hex Pro never does

@@ -43,13 +43,20 @@ show.
 | MIFARE DESFire | MIFARE DESFire, MIFARE DESFire EV1, MIFARE DESFire EV2, MIFARE DESFire EV3 |
 | EM Microelectronic | EM V10, EM V11, EM V16 |
 | ICODE | ICODE SLIX, ICODE SLIX2 |
-| Named by family only | ISO 15693, FeliCa, ePassport |
+| Named by family only | ISO 15693, FeliCa, ePassport, NFC Forum Type 4, Health device |
 :::
 
 The last row is what you see when the chip answers as one of a family but will
 not say which model it is. A Japanese transit card reads as FeliCa and opens its
 own result, covered in [Read a transit card](transit-cards.md). A passport reads
 as ePassport, covered in [Read a passport](passports.md).
+
+A Type 4 tag from a maker other than NXP reads as NFC Forum Type 4, and so does
+an Android phone set up to act as a tag. The app reads and writes its records
+like any other tag's. It cannot tell which chip is inside, so the card shows no
+**Memory** row, and a password, a permanent lock and **Memory dump** are not
+available for it. A health device reads as Health device, covered in
+[Health devices](#health-devices) below.
 
 Some chips say nothing an NFC app can match against a part number. The card then
 carries a **Reported** row and a **Version bytes** row in place of a name, which
@@ -94,6 +101,23 @@ with a 32-byte signature. It reads "Not a standard NXP signature" when the
 answer was shorter than that. Neither line is a verdict on whether a tag is genuine. The
 app writes down what the chip replied, and checks it against nothing.
 
+## Health devices {#health-devices}
+
+Some medical devices answer an iPhone the way a tag does, such as the NovoPen 6
+and NovoPen Echo Plus insulin pens. Hex NFC recognises one from what it says
+about itself and opens a **Health device** screen in place of the Tag screen.
+For a pen it can name, the heading reads **Novo Nordisk smart pen**. The screen
+says that Hex NFC does not read the pen's dose history, and a card below names
+an app that does, with a button to get it on the App Store and a link to the
+pen maker's list of apps that read it.
+Any other health device gets the heading **Health device** and no app
+suggestion.
+
+Hex NFC reads only what the device says about itself, and never writes to it. A
+write, an operation or an **Advanced** console command aimed at a health device
+stops before anything is written or sent. Nothing from the device is saved, so
+it does not appear in your history. Tap **Close** to leave the screen.
+
 ## What an iPhone cannot read
 
 One common card is out of reach on any iPhone. A MIFARE Classic stops the scan
@@ -102,9 +126,16 @@ further. [Why can my iPhone not read this tag at
 all?](troubleshooting.md#tag-not-readable) has the message and the reason.
 
 A MIFARE DESFire card is a softer version of the same limit. The app names the
-card and can send raw commands to it, and it reads records only when the card
-carries an ordinary NDEF area. The rest of a DESFire sits behind keys held by
-whoever issued the card.
+card and can send raw commands to it, and it reads records when the card
+carries an NDEF application and writes them when that application allows it. A
+blank MIFARE DESFire EV1, EV2 or EV3 card
+can be given one with **Format**, and **Remove NDEF setup** takes it off again.
+Both sit under **Dangerous Actions** on the **Operations** screen: see
+[Format a tag](erase-or-format.md#format-a-tag) and
+[Remove a card's NDEF setup](erase-or-format.md#remove-ndef-setup). A
+card already issued for something else, such as a transit or access card, keeps
+its data behind keys held by whoever issued it, and the app refuses to set it up
+and leaves it as it is.
 
 If a tag you believe is supported still will not scan, the cause is usually the
 hold rather than the chip. See

@@ -17,31 +17,36 @@ newest first. Pin the ones you want to keep.
 You need a tag you have already read; until you scan one, **History** is empty.
 See [Scan a tag](scan-a-tag.md).
 
-::::steps
-:::step[Open Hex NFC]
+:::::steps
+::::step[Open Hex NFC]
 The app opens on the home screen, which carries the **Scan**, **Build**,
 **Library** and **Advanced** tiles.
-:::
+::::
 
-:::step[Open the Library]
+::::step[Open the Library]
 Tap **Library**. The Library screen opens on **Presets**.
-:::
+::::
 
-:::step[Go to your scans]
+::::step[Go to your scans]
 At the top of the Library screen, tap **History**, to the right of
 **Presets**. Each row is headed by the chip's name, with the tag's UID and
 how long ago you read it underneath.
-:::
 
-:::step[Open the scan]
-Tap the scan you want. The Library closes and the scan opens in the Tag screen,
-holding the records and the chip details from the tap that made it.
+:::figure[Each row names the chip, then the tag's UID and how long ago you read it, and a pin replaces the icon on a pinned scan.]
+![The Library on the History tab with three NTAG213 scans of one tag, read 23 seconds, 1 minute and 2 minutes ago. The newest has a yellow pin in place of the blue icon.](../../../assets/library-history--list.png)
 :::
 ::::
 
+::::step[Open the scan]
+Tap the scan you want. The Library closes and the scan opens in the Tag screen,
+holding the records and the chip details from the tap that made it.
+::::
+:::::
+
 A transit card opens in the Transit card screen instead, read-only, the way it
 opened when you read the card. A passport read is never saved, so no passport
-appears in this list. See [Read a passport](passports.md).
+appears in this list. See [Read a passport](passports.md). A health device is
+never saved either.
 
 ## Pin a scan you want to keep
 
@@ -76,8 +81,8 @@ there is no way back to it, although reading the tag again makes a fresh scan.
 Before you read anything, **History** reads "No scan history", over the line
 "The last 50 tags you scan show up here. Pin one to keep it."
 
-- Read the same tag again. If nothing about the tap has changed, the scan you
-  already have moves back to the top of the list. No second row appears.
+- Reading the same tag again, with nothing about it changed, moves the scan you
+  already have back to the top of the list. No second row appears.
   Anything different in the chip details, the records or the tag's password
   protection gives you a new row instead.
 - Scans stay on this iPhone. They reach your iCloud account only when you turn

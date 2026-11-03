@@ -62,7 +62,7 @@ public final class SessionTraceModel {
             id: event.id,
             kind: kind(for: event.direction),
             timestamp: event.timestamp,
-            label: event.label ?? event.byteCount.map { "\($0) bytes" },
+            label: event.label ?? event.byteCount.map { String(localized: "\($0) bytes") },
             body: event.body
         )
     }

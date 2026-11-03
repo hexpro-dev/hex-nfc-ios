@@ -755,11 +755,12 @@ func felicaPlan(_ profile: ChipProfile, _ credentials: TagTestCredentials) -> Ta
 
 // MARK: - MIFARE DESFire (Type-4, identification only)
 
-/// The app's whole DESFire surface is identification plus raw transceive —
 /// DESFire keeps data in key-protected applications, not a blind-readable NDEF
-/// area, so `ChipProfile` advertises only `.rawTransceive`. This suite is
-/// therefore **entirely read-only with no cleanup**, which is the correct shape
-/// for the feature set rather than a shortcut: there is nothing to write back.
+/// area, so `ChipProfile` declares only `.rawTransceive`. A card that has been
+/// given an NDEF application gains Read and Write from its own NDEF status, and
+/// `df.ndefProbe` checks that it does. This suite is **entirely read-only with
+/// no cleanup**: it has to run on blank, transit and NDEF cards alike, and only
+/// the last of those has anything a write could put back.
 ///
 /// Native (unwrapped) command forms throughout — that is what iOS's
 /// `sendMiFareCommand` puts on the wire for a DESFire, and what
@@ -779,6 +780,7 @@ func desfirePlan(_ profile: ChipProfile, _ credentials: TagTestCredentials) -> T
             .expect("session chip id", tag.chip?.id.description ?? "nil", equals: ctx.profile.id.description),
             .require("family is DESFire", isDESFire),
             .pass("storage \(tag.chip?.memoryLayout.byteCount ?? 0) B"),
+            // Before the card has been asked about NDEF, so the declared set.
             .require("only rawTransceive advertised", tag.capabilities == [.rawTransceive]),
         ])
     })
@@ -864,6 +866,13 @@ func desfirePlan(_ profile: ChipProfile, _ credentials: TagTestCredentials) -> T
 
     steps
         .append(TagTestStep("df.appIDs", "List applications", safety: .readOnly, requires: .rawTransceive) { tag, ctx in
+            // Back to the PICC level first. On a card that hosts the NDEF
+            // application, the SELECT one step earlier succeeded and left that
+            // application selected, and the listing is a PICC-level command.
+            _ = try await tag.transceive(RawCommand(
+                bytes: Data([0x5A, 0x00, 0x00, 0x00]),
+                name: "SelectApplication 000000"
+            ))
             let response = try await tag.transceive(RawCommand(bytes: Data([0x6A]), name: "GetApplicationIDs"))
             guard let status = response.first else {
                 throw TagError.malformedResponse(response, diagnostics: "empty GetApplicationIDs")
@@ -945,20 +954,75 @@ func desfirePlan(_ profile: ChipProfile, _ credentials: TagTestCredentials) -> T
     // On a DESFire without an NDEF application it must fail *cleanly* as
     // `capabilityUnsupported` (CoreNFC's `queryNDEFStatus` → `.notSupported`),
     // never as a transport error that would look like tag loss to the scan flow.
+    //
+    // Either way the read asked the card for its NDEF status, so the tag's
+    // capabilities must now say what the card answered: Read (and Write, if the
+    // NDEF file takes writes) on a card with an NDEF application, raw transceive
+    // alone on one without.
     steps.append(TagTestStep("df.ndefProbe", "Opportunistic NDEF probe", safety: .readOnly) { tag, _ in
         do {
             let message = try await tag.readNDEF()
+            let gained = TagStepCheck.require(
+                "capabilities gained NDEF read from the card",
+                tag.capabilities.contains(.ndefRead)
+            )
             if NDEFCodec.isEmptyMessage(message) {
-                return .pass("NDEF readable, zero records")
+                return .all([.pass("NDEF readable, zero records"), gained])
             }
             let records = try NDEFCodec.decode(message)
-            return .require("NDEF message decodes (\(records.count) record(s))", !records.isEmpty)
+            return .all([.require("NDEF message decodes (\(records.count) record(s))", !records.isEmpty), gained])
         } catch let error as TagError {
             if case .capabilityUnsupported = error.kind {
-                return .pass("no NDEF application: refused cleanly as capabilityUnsupported")
+                return .all([
+                    .pass("no NDEF application: refused cleanly as capabilityUnsupported"),
+                    .require("capabilities stay raw-only", tag.capabilities == [.rawTransceive]),
+                ])
             }
             return .require("NDEF probe failed with \(error.kind) rather than capabilityUnsupported", false)
         }
+    })
+
+    // DF-0b on the bench: the one silicon fact Remove NDEF setup rests on,
+    // proved before any card is written. The factory PICC key is presented
+    // with AuthenticateISO through the shipping driver, then the PICC level is
+    // selected again, which ends the session. An authentication changes nothing
+    // on the card. It runs only where Remove itself would present the key (a
+    // blank card, or this app's own setup), and the driver refuses a card whose
+    // master key is not DES at version 00 before a frame of the handshake goes
+    // out, so a transit card never sees an authentication.
+    steps.append(TagTestStep(
+        "df.factoryKeyAuth",
+        "Factory key (AuthenticateISO)",
+        safety: .readOnly,
+        requires: .rawTransceive
+    ) { tag, _ in
+        guard let driver = tag.desfireNDEFDriver else {
+            return .pass("not presented: not a DESFire EV1, EV2 or EV3")
+        }
+        let state = try await driver.readState()
+        switch state {
+        case .blank, .ours:
+            break
+
+        default:
+            return .pass("not presented: card is \(state)")
+        }
+        do {
+            try await driver.authenticateWithFactoryKey()
+        } catch let error as DESFireNDEFError {
+            switch error.reason {
+            case .piccKeyNotFactory, .notAtPICCLevel:
+                return .pass("not presented: \(error.diagnostics)")
+
+            default:
+                return .require("factory key accepted (\(error.reason): \(error.diagnostics))", false)
+            }
+        }
+        _ = try await tag.transceive(RawCommand(
+            bytes: DESFireAPDU.wrap(0x5A, Data([0x00, 0x00, 0x00])),
+            name: "SelectApplication 000000"
+        ))
+        return .pass("factory PICC key accepted by AuthenticateISO; session ended")
     })
 
     // Nothing was written — no cleanup.

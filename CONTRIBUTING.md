@@ -18,16 +18,20 @@ This means:
   commit. That's expected.
 - The App Store binary is built from the canonical repo. We cannot accept
   binary-only contributions; everything must be reproducible from source.
-- Forks are welcome under the Business Source License 1.1 (non-production use;
-  it converts to Apache 2.0 on the Change Date). The "Hex NFC" App Store identity and
+- Forks are welcome under the Business Source License 1.1, which allows
+  non-production use and, under its Additional Use Grant, personal and
+  non-commercial production use (see `LICENSE`). It converts to the Apache
+  License 2.0 on the Change Date. The "Hex NFC" App Store identity and
   the hexagon-split logo are trademarks (see `NOTICE`) and cannot be reused
   in derivative apps without permission.
 
 ## What we want
 
 - **Bug reports.** Especially edge cases on specific chip families. Include
-  the chip ID, iOS version, iPhone model, exact steps, and the diagnostic
-  payload from the in-app error sheet (long-press an error to copy it).
+  the chip name from the tag info card, the app version (Settings, beside
+  Version), your iOS version and iPhone model, the exact steps, and the text
+  under Diagnostics on the error screen (open Diagnostics, then tap the text to
+  copy it, or press and hold to select it on a write error).
 - **Chip support.** New tag types with attached datasheets. Add a simulator
   in `app/Tests/HexNFCTagSim/` first. We don't accept hardware-only patches.
 - **Translations.** All user-facing strings live in `Localizable.xcstrings`.
@@ -70,12 +74,16 @@ swift test
 open HexNFC.xcodeproj
 ```
 
-Lint and format before submitting:
+From `app/`, lint and format with the settings CI uses before submitting:
 
 ```bash
-swiftlint
-swiftformat .
+swiftlint --strict --config ../.swiftlint.yml
+swiftformat --config ../.swiftformat .
 ```
+
+CI checks formatting with `swiftformat --lint` at the SwiftFormat version
+pinned in `.github/workflows/ci.yml`. Use that version, because neighbouring
+releases disagree on some rules.
 
 ## Commit messages
 

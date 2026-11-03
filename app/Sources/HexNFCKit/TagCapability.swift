@@ -52,4 +52,54 @@ public struct TagCapability: OptionSet, Hashable, Sendable, Codable {
     /// on credential shape rather than transport. A chip advertising
     /// `.passwordAuth` is claiming the PWD/PACK backend can drive it.
     public static let tripleDESAuth = TagCapability(rawValue: 1 << 15)
+    /// Device is a personal health device speaking NFC Forum PHDC (an insulin
+    /// pen, a meter): its NDEF file is a live IEEE 11073-20601 exchange, not
+    /// stored content. Drives the read-only health device view.
+    ///
+    /// It is the **only** capability such a device gets. Every write path
+    /// refuses it before a frame goes out (`refuseIfHealthDevice`), because an
+    /// NDEF write here lands in a medical device's protocol stream.
+    public static let personalHealthDevice = TagCapability(rawValue: 1 << 16)
+}
+
+/// What a card's own NDEF structure lets the phone do, as iOS's NDEF reader
+/// reports it (`queryNDEFStatus`).
+///
+/// For most chips NDEF support is a fact about the silicon, and the catalog
+/// declares it. MIFARE DESFire is the exception. A factory card carries no NDEF
+/// application, while one that has been set up as an NFC Forum Type 4 tag reads
+/// and writes like any other, so the same chip can be either. Its profile
+/// therefore declares raw transceive alone, and this answer, asked of the card,
+/// supplies the rest. See `ChipProfile.ndefDependsOnCard`.
+public enum NDEFAccess: Sendable, Hashable {
+    case readWrite
+    case readOnly
+    /// No NDEF structure the phone can find: a factory or transit DESFire.
+    case notSupported
+
+    /// The NDEF capabilities this answer grants.
+    public var capabilities: TagCapability {
+        switch self {
+        case .readWrite: [.ndefRead, .ndefWrite]
+        case .readOnly: .ndefRead
+        case .notSupported: []
+        }
+    }
+}
+
+public extension TagCapability {
+    /// A connected tag's capabilities, given what its card has said about NDEF.
+    ///
+    /// The declared set stands for every chip whose NDEF support the catalog can
+    /// state. For one whose support belongs to the card, the card's answer
+    /// replaces the two NDEF bits. Until the card has been asked the declared set
+    /// stands, so the tag claims nothing that no reading backs.
+    static func resolved(
+        declared: TagCapability,
+        chip: ChipProfile?,
+        ndefAccess: NDEFAccess?
+    ) -> TagCapability {
+        guard chip?.ndefDependsOnCard == true, let ndefAccess else { return declared }
+        return declared.subtracting([.ndefRead, .ndefWrite]).union(ndefAccess.capabilities)
+    }
 }

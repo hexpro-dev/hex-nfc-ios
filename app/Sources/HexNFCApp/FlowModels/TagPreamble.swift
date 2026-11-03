@@ -135,6 +135,14 @@ enum TagPreamble {
     /// diverge, and so a second tap re-establishes state rather than trusting
     /// what the first one saw.
     static func establish(on tag: ConnectedTag, _ request: Request) async throws -> Outcome {
+        // A personal health device goes no further than identification, on
+        // every route that comes through here: writing, erasing, formatting,
+        // protecting, and the identify tap in front of each of them, which only
+        // exists because a change is about to follow. Refused before the
+        // pre-read, so not one frame of a write flow reaches an insulin pen.
+        // The connected tag refuses again at each write primitive.
+        try tag.refuseIfHealthDevice(.ndefWrite)
+
         // If the tag is already password-protected over the area we need to
         // write, the write will be NAK'd unless we authenticate first. Detect it
         // up front (the high-level NDEF write reports a protection NAK as a

@@ -101,8 +101,21 @@ public final class SimulatedConnectedTag: ConnectedTag, @unchecked Sendable {
         simulator.profile
     }
 
+    /// Mirrors `CoreNFCConnectedTag.observedNDEFAccess`.
+    private var observedNDEFAccess: NDEFAccess?
+
     public var capabilities: TagCapability {
-        simulator.profile?.capabilities ?? []
+        .resolved(declared: simulator.profile?.capabilities ?? [], chip: chip, ndefAccess: observedNDEFAccess)
+    }
+
+    public func queryNDEFAccess() async throws -> NDEFAccess {
+        let access = simulator.ndefAccess
+        observedNDEFAccess = access
+        return access
+    }
+
+    public var healthDevice: PHDAssociation? {
+        (simulator as? PHDCDeviceSimulator)?.healthDevice
     }
 
     /// Live NTAG424 EV2 session — mirrors `CoreNFCConnectedTag.ev2Session`, so an
@@ -128,6 +141,12 @@ public final class SimulatedConnectedTag: ConnectedTag, @unchecked Sendable {
         if chip?.id == .ntag424DNA, let driver = ev2Session.driver, driver.isAuthenticated {
             return try await driver.readNDEFFile()
         }
+        // Mirror CoreNFC's read, which asks the card's NDEF status first, keeps
+        // the answer, and stops at "not supported". Scoped to the chips whose
+        // answer changes anything, which today is DESFire.
+        if chip?.ndefDependsOnCard == true, try await queryNDEFAccess() == .notSupported {
+            throw TagError.capabilityUnsupported(.ndefRead, diagnostics: "card reports no NDEF application")
+        }
         let raw = try simulator.readNDEF()
         // Mirror CoreNFC: the real read does NOT echo the on-tag bytes verbatim —
         // it reparses the message into records and re-encodes them
@@ -143,10 +162,17 @@ public final class SimulatedConnectedTag: ConnectedTag, @unchecked Sendable {
     }
 
     public func writeNDEF(_ records: [NDEFRecord]) async throws {
+        // The same backstop as `CoreNFCConnectedTag`, at the same point, so a
+        // flow test that reaches a health device's write fails here as it would
+        // on a phone. `PHDCDeviceSimulator` would accept the write, as a pen
+        // would; this is what stops it.
+        try refuseIfHealthDevice(.ndefWrite)
         if chip?.id == .ntag424DNA, let driver = ev2Session.driver, driver.isAuthenticated {
             try await driver.writeNDEFFile(records)
             return
         }
+        // The same guard production runs before its high-level write.
+        try await requireCardNDEFWrite()
         // Mirror CoreNFC: an empty NDEF message is serialised as a single Empty
         // record (TNF 0x00) — `D0 00 00` — per the NFC Forum spec, not as zero
         // bytes. `encode([])` gives zero bytes, so substitute the Empty record
@@ -160,6 +186,7 @@ public final class SimulatedConnectedTag: ConnectedTag, @unchecked Sendable {
     }
 
     public func transceive(_ command: RawCommand) async throws -> Data {
+        try refuseIfHealthDevice(.rawTransceive)
         // A Type-2 chip halted by an earlier refusal answers nothing, and CoreNFC
         // reports that as the session gone. Every frame the 2026-09-10 trace shows
         // after a refusal drew "Tag connection lost" in about 310 ms, after both
@@ -206,6 +233,7 @@ public final class SimulatedConnectedTag: ConnectedTag, @unchecked Sendable {
     }
 
     public func writeMemory(at offset: Int, bytes: Data) async throws {
+        try refuseIfHealthDevice(.memoryWrite)
         try simulator.writeMemory(at: offset, bytes: bytes)
     }
 }

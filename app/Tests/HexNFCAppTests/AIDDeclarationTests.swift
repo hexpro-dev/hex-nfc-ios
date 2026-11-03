@@ -37,19 +37,27 @@ final class AIDDeclarationTests: XCTestCase {
 
     // MARK: ISO 7816
 
-    /// Exactly one AID, and it is the travel-document one.
+    /// Exactly two AIDs, travel document first, then the NDEF Tag Application.
     ///
     /// The list is a *discovery filter*: iOS SELECTs each entry itself and only
     /// delivers a tag once one succeeds, so an undeclared ISO-DEP tag is never
-    /// seen at all. The eMRTD AID is therefore load-bearing for the passport
-    /// reader. The NDEF Type-4 AIDs are deliberately absent: NTAG424 and DESFire
-    /// are NXP silicon and arrive on `.miFare`, where the app sends its own
-    /// SELECT and no declaration applies.
-    func test_iso7816SelectIdentifiers_declareTheEMRTDApplicationAndNothingElse() throws {
+    /// seen at all. The eMRTD AID is load-bearing for the passport reader.
+    ///
+    /// The NDEF AID is load-bearing for every Type 4 tag that is not NXP
+    /// silicon. NTAG424 and DESFire arrive on `.miFare` without it, but an
+    /// ST25TA, an Infineon part, Android card emulation or an NFC health device
+    /// (a NovoPen) is ISO-DEP and nothing else, and without the declaration iOS
+    /// never hands it over: the scan sheet just waits.
+    ///
+    /// **Order is asserted, not just membership.** iOS stops at the first AID
+    /// that answers, and `ISO7816TagIdentifier` reads `initialSelectedAID` on
+    /// the strength of the eMRTD one going first: a tag delivered on the NDEF
+    /// AID has already refused it, so the passport probe is skipped.
+    func test_iso7816SelectIdentifiers_declareTheEMRTDThenTheNDEFApplication() throws {
         let aids = try XCTUnwrap(
             plist["com.apple.developer.nfc.readersession.iso7816.select-identifiers"] as? [String]
         )
-        XCTAssertEqual(aids, ["A0000002471001"])
+        XCTAssertEqual(aids, ["A0000002471001", "D2760000850101"])
     }
 
     /// No payment AID, ever.
@@ -58,21 +66,32 @@ final class AIDDeclarationTests: XCTestCase {
     /// would know what to do with one. Reviewers check; keeping this list empty
     /// is the answer, and this test is what keeps it that way.
     func test_noPaymentApplicationIdentifiersAreDeclared() throws {
-        let forbidden = [
+        // Matched on the first five bytes, the registered application provider
+        // and the start of its product code, so a scheme's other products are
+        // caught too.
+        let forbiddenFamilies = [
             "A0000000031010", // Visa
             "A0000000041010", // Mastercard
             "A00000002501", // American Express
             "A0000000651010", // JCB
             "A000000333010101", // UnionPay
+        ]
+        // Matched whole. It shares its first six bytes with the NDEF Tag
+        // Application, `D2760000850101`, which is declared on purpose, so a
+        // prefix match here would forbid the one NFC Forum AID the app needs.
+        let forbiddenExactly = [
             "D2760000850102", // Authentication Tag Application
         ]
         let aids = try (plist["com.apple.developer.nfc.readersession.iso7816.select-identifiers"]
             as? [String] ?? []).map { $0.uppercased() }
-        for bad in forbidden {
+        for bad in forbiddenFamilies {
             XCTAssertFalse(
                 aids.contains { $0.hasPrefix(bad.prefix(10).uppercased()) },
-                "Payment or authentication AID \(bad) must never be declared"
+                "Payment AID \(bad) must never be declared"
             )
+        }
+        for bad in forbiddenExactly {
+            XCTAssertFalse(aids.contains(bad), "Authentication AID \(bad) must never be declared")
         }
     }
 

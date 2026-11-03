@@ -253,10 +253,6 @@ struct TagEditorSheet: View {
         }
     }
 
-    /// Apply a reading that arrived while a sheet was covering the editor.
-    ///
-    /// `apply` discards a reading about a different tag, so this is safe to call
-    /// after any operation, including one the user pointed at some other tag.
     /// Build the write flow at the moment the user presses Write, which is the
     /// moment they consented to it, and hold it until the sheet closes.
     private func startWrite() {
@@ -282,18 +278,33 @@ struct TagEditorSheet: View {
             // when it knows one. Without it the gate would only ask the user to
             // confirm the identity of whatever they are holding.
             targetUID: editModel.targetUID,
-            pinnedUID: request.pinnedUID
+            pinnedUID: request.pinnedUID,
+            activity: appModel.reviewPrompt
         )
         lastStartedWrite = model
         epochAtWriteStart = operationsEpoch
         activeWriteModel = model
     }
 
+    /// Apply a reading that arrived while a sheet was covering the editor.
+    ///
+    /// `apply` discards a reading about a different tag, so this is safe to call
+    /// after any operation, including one the user pointed at some other tag.
     private func applyPendingObservation() {
         guard !showingOperations, activeWriteModel == nil, let observation = pendingObservation else { return }
         pendingObservation = nil
         let arm = pendingArm
         pendingArm = nil
+        // An erase read back onto an unedited editor empties the record list as
+        // the Operations sheet starts to dismiss, which swaps the List out during
+        // a sheet transition: the shape of the 2026-09-27 crash. There is no
+        // swipe behind it, so UIKit and the outgoing List agree on the count and
+        // it has not crashed, but it is made without animation as a precaution,
+        // like the last swipe-delete (see `delete(id:)`).
+        if editModel.emptiesRecords(applying: observation) {
+            withoutAnimation { _ = editModel.apply(observation, provenArm: arm) }
+            return
+        }
         withAnimation(reduceMotion ? nil : HexTokens.Motion.lush) {
             _ = editModel.apply(observation, provenArm: arm)
         }
@@ -471,16 +482,25 @@ struct TagEditorSheet: View {
 
     /// Names the fault, so the detail below can name the repair.
     private var unformattedTitle: LocalizedStringKey {
-        editModel.tag?.formatState == .unreadableDataArea
-            ? "This tag's data won't read"
-            : "This tag isn't formatted"
+        switch editModel.tag?.formatState {
+        case .unreadableDataArea: "This tag's data won't read"
+        case .noNDEFApplication: "This card isn't set up for NDEF"
+        default: "This tag isn't formatted"
+        }
     }
 
     /// Names the repair, and only a repair this state can actually take.
     private var unformattedDetail: LocalizedStringKey {
-        editModel.tag?.formatState == .unreadableDataArea
-            ? "This tag already has a Capability Container, so formatting won't help. Erase it to rewrite the data area."
-            : "It has no Capability Container, so records written now won't be readable. Format it first."
+        switch editModel.tag?.formatState {
+        case .unreadableDataArea:
+            "This tag already has a Capability Container, so formatting won't help. Erase it to rewrite the data area."
+
+        case .noNDEFApplication:
+            "It has no NDEF application yet, so records can't be written to it. Format it to set one up."
+
+        default:
+            "It has no Capability Container, so records written now won't be readable. Format it first."
+        }
     }
 
     /// Shown when no reader could find an NDEF message on the scanned tag. The
@@ -581,6 +601,7 @@ struct TagEditorSheet: View {
                 HexButton("Add record", systemImage: "plus", variant: clearedTag ? .secondary : .primary) {
                     showingAdd = true
                 }
+                .accessibilityIdentifier("editor.empty.add")
             }
             .padding(.horizontal, HexTokens.Spacing.xxl)
             Spacer(minLength: 0)
@@ -651,27 +672,53 @@ struct TagEditorSheet: View {
         .scrollContentBackground(.hidden)
         .background(HexTokens.Color.surface0)
         .environment(\.defaultMinListRowHeight, 0)
+        // Filtered before the `ForEach`, never with an `if` inside it. Built
+        // against the iOS 27 SDK, an `if` in rotor content becomes an
+        // `Optional` entry, and `Optional: AccessibilityRotorContent` first
+        // ships in iOS 27's SwiftUI. The compiler accepts it without a word.
+        // 1.0 (build 36, Xcode 27) aborted on iOS 26 in the runtime's lookup of
+        // this sheet's `Body` type, every time the sheet was presented and
+        // whichever branch of `content` was showing (2026-10-16). Xcode 26
+        // builds never produce the type, so only an Xcode 27 build run on
+        // iOS 26 or earlier can show it.
         .accessibilityRotor("URLs") {
-            ForEach(editModel.records) { record in
-                if case .uri = record {
-                    AccessibilityRotorEntry(RecordLocalization.subtitle(for: record), id: record.id)
-                }
+            ForEach(rotorRecords(.urls)) { record in
+                AccessibilityRotorEntry(RecordLocalization.subtitle(for: record), id: record.id)
             }
         }
         .accessibilityRotor("Contacts") {
-            ForEach(editModel.records) { record in
-                if case .contact = record {
-                    AccessibilityRotorEntry(RecordLocalization.subtitle(for: record), id: record.id)
-                }
+            ForEach(rotorRecords(.contacts)) { record in
+                AccessibilityRotorEntry(RecordLocalization.subtitle(for: record), id: record.id)
             }
         }
         .accessibilityRotor("Wi-Fi") {
-            ForEach(editModel.records) { record in
-                if case .wifiWPS = record {
-                    AccessibilityRotorEntry(RecordLocalization.subtitle(for: record), id: record.id)
-                }
+            ForEach(rotorRecords(.wifi)) { record in
+                AccessibilityRotorEntry(RecordLocalization.subtitle(for: record), id: record.id)
             }
         }
+    }
+
+    /// The editor's VoiceOver rotors.
+    private enum Rotor {
+        case urls
+        case contacts
+        case wifi
+    }
+
+    /// The rotor that lists a record, if any.
+    private static func rotor(for record: NDEFRecord) -> Rotor? {
+        switch record {
+        case .uri: .urls
+        case .contact: .contacts
+        case .wifiWPS: .wifi
+        default: nil
+        }
+    }
+
+    /// The records one rotor lists, in list order. See the rotors above for why
+    /// the filtering happens here and not in the rotor content.
+    private func rotorRecords(_ rotor: Rotor) -> [NDEFRecord] {
+        editModel.records.filter { Self.rotor(for: $0) == rotor }
     }
 
     // Row insets that reproduce the editor's old card rhythm inside a plain
@@ -705,11 +752,34 @@ struct TagEditorSheet: View {
         delete(id: id)
     }
 
+    /// Removing the last record swaps the List for the empty state, so that one
+    /// removal is made with animations off and the List leaves in the same
+    /// update.
+    ///
+    /// Animated, the outgoing List stayed mounted for its exit with its rows
+    /// frozen, while a swipe's Delete had already taken the row out on UIKit's
+    /// side. Any sheet presented inside that window laid the List out again:
+    /// Write pressed about 0.6 s after swiping away the last record made iOS 27
+    /// abort with "invalid number of items in section 0 ... after the update
+    /// (4) ... before the update (3)" (1.0.1, 2026-10-22). Every other removal
+    /// keeps its animation, because the List stays and its rows stay live.
     private func delete(id: UUID) {
         HexHeroMoment.destructiveWarn.play()
+        if !editModel.records.contains(where: { $0.id != id }) {
+            withoutAnimation { editModel.remove(id: id) }
+            return
+        }
         withAnimation(HexTokens.Motion.snappy) {
             editModel.remove(id: id)
         }
+    }
+
+    /// Make a change with animations off, overriding whatever transaction it was
+    /// called inside, including one SwiftUI may run a swipe action in.
+    private func withoutAnimation(_ change: () -> Void) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction, change)
     }
 
     private func moveRecords(from source: IndexSet, to destination: Int) {

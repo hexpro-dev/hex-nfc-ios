@@ -18,11 +18,25 @@ struct MiFareTagIdentifier: Sendable {
         switch tag.mifareFamily {
         case .desfire:
             // Pin the generation (EV1/EV2/EV3) + storage from the DESFire
-            // native GET_VERSION first frame. Falls back to the generic
-            // profile if the card declines 0x60 or returns an unexpected frame.
-            if let version = try? await getVersion(tag),
-               let profile = ChipCatalog.identify(desFireVersion: version)
-            {
+            // native GET_VERSION first frame. A card that answers with a frame
+            // the decoder does not know is the generic profile.
+            //
+            // A send that never completed is not that. On 2026-10-30 an EV3
+            // resting on the phone dropped its `60` straight after connecting
+            // ("Tag is not connected"), identified as generic, and Remove NDEF
+            // setup told the owner it works only on EV1, EV2 and EV3 cards. The
+            // generation decides whether those operations run at all, so a lost
+            // send asks again from a re-polled tag, as it does for an NTAG21x.
+            // If the retry is lost too, the generic profile is handed up as before.
+            guard case .answered(let version) = await probe(tag, Data([0x60]), label: "GET_VERSION") else {
+                return .init(
+                    profile: ChipCatalog.profile(for: .genericMifareDESFire),
+                    report: nil,
+                    verdict: .transportLost
+                )
+            }
+            await drainNativeContinuations(tag, after: version)
+            if let profile = ChipCatalog.identify(desFireVersion: version) {
                 return .init(profile: profile, report: nil)
             }
             return .init(profile: ChipCatalog.profile(for: .genericMifareDESFire), report: nil)
@@ -129,15 +143,6 @@ struct MiFareTagIdentifier: Sendable {
             return .init(profile: profile, report: report)
         }
         return .init(profile: nil, report: report)
-    }
-
-    /// NTAG / Ultralight EV1 `GET_VERSION`. Returns the raw 8-byte block. The
-    /// frame is traced so the exact version bytes show up for any tag — the
-    /// fingerprint we need when adding support for an unrecognised chip.
-    private func getVersion(_ tag: NFCMiFareTag) async throws -> Data {
-        let first = try await send(tag, Data([0x60]), label: "GET_VERSION")
-        await drainNativeContinuations(tag, after: first)
-        return first
     }
 
     /// Send one identification frame and report what it *did*, not what it

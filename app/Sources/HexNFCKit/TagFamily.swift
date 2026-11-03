@@ -161,6 +161,7 @@ public enum Type4Variant: String, Hashable, Sendable, Codable, CaseIterable {
     case desfireEV2
     case desfireEV3
     case ePassport
+    case personalHealthDevice
     case unknown
 
     public var shortName: String {
@@ -171,7 +172,17 @@ public enum Type4Variant: String, Hashable, Sendable, Codable, CaseIterable {
         case .desfireEV2: "MIFARE DESFire EV2"
         case .desfireEV3: "MIFARE DESFire EV3"
         case .ePassport: "ePassport"
+        case .personalHealthDevice: "Type 4 (PHDC)"
         case .unknown: "Type 4"
+        }
+    }
+
+    /// Any MIFARE DESFire generation, including one the generation byte did not
+    /// name.
+    public var isDESFire: Bool {
+        switch self {
+        case .desfireGeneric, .desfireEV1, .desfireEV2, .desfireEV3: true
+        case .ntag424DNA, .ePassport, .personalHealthDevice, .unknown: false
         }
     }
 }

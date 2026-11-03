@@ -31,10 +31,48 @@ public enum ChipCatalog {
         .mifareDESFireEV3,
         .genericMifareDESFire,
         .ePassport,
+        .genericType4,
+        .personalHealthDevice,
     ]
 
     public static func profile(for id: ChipID) -> ChipProfile? {
         all.first { $0.id == id }
+    }
+
+    /// Classify a Type 4 tag reached through the NDEF application AID from what
+    /// `Type4NDEFProbe` read off it. A PHD record makes it a personal health
+    /// device, named for its maker when the association request's system ID
+    /// carries an OUI this app knows. Anything else is an ordinary Type 4 tag,
+    /// or `nil` when the probe found no readable NDEF file at all.
+    static func identify(type4Probe outcome: Type4NDEFProbe.Outcome) -> (ChipProfile, PHDAssociation?)? {
+        switch outcome {
+        case .personalHealthDevice(let message):
+            let association = message.flatMap(PHDAssociation.init(ndefMessage:))
+            return (personalHealthDevice(maker: association?.maker), association)
+
+        case .ndef:
+            return (ChipProfile.genericType4, nil)
+
+        case .unreadable:
+            return nil
+        }
+    }
+
+    /// The health device profile, carrying the maker when it is known. Built per
+    /// tap rather than looked up, the way `identify(desFireVersion:)` builds a
+    /// DESFire profile around the card's own storage byte: the maker is a reading
+    /// off this device, not a property of a chip model.
+    static func personalHealthDevice(maker: HealthDeviceMaker?) -> ChipProfile {
+        let base = ChipProfile.personalHealthDevice
+        guard let maker else { return base }
+        return ChipProfile(
+            id: base.id,
+            family: base.family,
+            capabilities: base.capabilities,
+            displayName: base.displayName,
+            manufacturer: maker.name,
+            memoryLayout: base.memoryLayout
+        )
     }
 
     /// Classify an ISO 7816 tag as an electronic passport from the status word
@@ -196,9 +234,14 @@ public enum ChipCatalog {
     ///   `[5]` storage size  ·  `[6]` protocol
     ///
     /// Keyed on **vendor + HW type only**, so it's robust to the version/storage
-    /// bytes and to whichever frame form the tag returns. DESFire reports HW
-    /// type `0x01` (and arrives via its own `.desfire` family), so it is
-    /// excluded here regardless.
+    /// bytes and to whichever frame form the tag returns.
+    ///
+    /// HW type `0x01` is a DESFire, decoded by `identify(desFireVersion:)` so the
+    /// generation is pinned the same way on both transports. A DESFire normally
+    /// arrives as `.miFare`, but one that hosts the NDEF application is delivered
+    /// as `.iso7816` once the app declares the NDEF AID, and without this it would
+    /// stop being recognised as a DESFire on exactly the cards Remove NDEF setup
+    /// is for.
     public static func identify(type4Version response: Data) -> ChipProfile? {
         var bytes = [UInt8](response)
         // Drop a trailing wrapped-native status word (91 AF / 91 00) if present,
@@ -206,8 +249,11 @@ public enum ChipCatalog {
         if bytes.count >= 2, bytes[bytes.count - 2] == 0x91 {
             bytes.removeLast(2)
         }
-        guard bytes.count >= 7 else { return nil }
-        guard bytes[0] == 0x04, bytes[1] == 0x04 else { return nil }
+        guard bytes.count >= 7, bytes[0] == 0x04 else { return nil }
+        if bytes[1] == 0x01 {
+            return identify(desFireVersion: Data(bytes.prefix(7)))
+        }
+        guard bytes[1] == 0x04 else { return nil }
         return profile(for: .ntag424DNA)
     }
 
@@ -258,7 +304,9 @@ public enum ChipCatalog {
             id: id,
             family: .type4(variant),
             // DESFire data lives in key-protected applications, not a
-            // blind-readable NDEF area — only raw transceive is advertised.
+            // blind-readable NDEF area, so only raw transceive is declared. A
+            // card with an NDEF application gains Read and Write from its own
+            // answer (`ChipProfile.ndefDependsOnCard`).
             capabilities: [.rawTransceive],
             displayName: variant.shortName,
             manufacturer: "NXP",
@@ -722,9 +770,10 @@ extension ChipProfile {
         id: .genericMifareDESFire,
         family: .type4(.desfireGeneric),
         // DESFire stores data in key-protected applications, not an NDEF area
-        // we can read or write blind — so only raw transceive is advertised.
-        // A DESFire that *does* host an NDEF app is still read opportunistically
-        // by `readNDEF()`, which probes the tag at runtime.
+        // we can read or write blind, so only raw transceive is declared. A
+        // DESFire that *does* host an NDEF app says so when its NDEF status is
+        // asked, and the connected tag's capabilities gain Read and Write from
+        // that answer (`TagCapability.resolved`).
         capabilities: [.rawTransceive],
         displayName: "MIFARE DESFire",
         manufacturer: "NXP",
@@ -766,6 +815,33 @@ extension ChipProfile {
         displayName: "ePassport",
         // The chip vendor (NXP / Infineon / Thales …) isn't read, so we don't
         // claim one; "Unknown" is hidden by the info card.
+        manufacturer: "Unknown",
+        memoryLayout: ChipMemoryLayout(pageSize: 1, pageCount: 0)
+    )
+
+    /// An NFC Forum Type 4 tag that iOS hands over as `.iso7816` through the
+    /// NDEF application AID: ST25TA, Infineon parts, an Android phone emulating
+    /// a tag. NDEF goes through CoreNFC's high-level path, as it already does for
+    /// every other `.iso7816` tag. The silicon is never fingerprinted, so there
+    /// is no memory layout and no maker to claim.
+    static let genericType4 = ChipProfile(
+        id: .genericType4,
+        family: .type4(.unknown),
+        capabilities: [.ndefRead, .ndefWrite, .rawTransceive],
+        displayName: "NFC Forum Type 4",
+        manufacturer: "Unknown",
+        memoryLayout: ChipMemoryLayout(pageSize: 1, pageCount: 0)
+    )
+
+    /// A personal health device (NFC Forum PHDC over a Type 4 tag), such as an
+    /// insulin pen. Its NDEF file is the device's live IEEE 11073-20601
+    /// exchange, so the one capability is the one that routes it to the
+    /// read-only health device view: no NDEF read or write, no raw commands.
+    static let personalHealthDevice = ChipProfile(
+        id: .personalHealthDevice,
+        family: .type4(.personalHealthDevice),
+        capabilities: [.personalHealthDevice],
+        displayName: String(localized: "Health device"),
         manufacturer: "Unknown",
         memoryLayout: ChipMemoryLayout(pageSize: 1, pageCount: 0)
     )

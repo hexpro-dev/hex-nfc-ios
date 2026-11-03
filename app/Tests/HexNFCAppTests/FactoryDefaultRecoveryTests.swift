@@ -503,7 +503,7 @@ final class FactoryDefaultRecoveryTests: XCTestCase {
     /// appear even without the guard. That is a fact about today's driver and
     /// not a rule, and the rule is what may not drift.
     @MainActor
-    func test_onlyTheAttemptLimitIsBarredFromTheFactoryDefault() {
+    func test_onlyTheAttemptLimitAndNDEFRemovalAreBarredFromTheFactoryDefault() {
         let pending = PendingProtection(
             settings: TagProtection(passwordProtect: true, protectFromPage: 4),
             credential: .type2(password: typed, pack: pack)
@@ -511,6 +511,8 @@ final class FactoryDefaultRecoveryTests: XCTestCase {
         let table: [(OperationsFlowModel.Operation, Bool)] = [
             (.erase, true),
             (.format, true),
+            // Never holds a credential: a DESFire has no protection backend.
+            (.removeNDEFSetup, false),
             (.permanentLock, true),
             (.enableProtection(pending), true),
             (.disableProtection, true),
@@ -528,7 +530,7 @@ final class FactoryDefaultRecoveryTests: XCTestCase {
                 "\(operation) must \(allowed ? "allow" : "refuse") a delivery-password tap"
             )
         }
-        XCTAssertEqual(table.count, 7, "an Operation was added without saying whether it may guess")
+        XCTAssertEqual(table.count, 8, "an Operation was added without saying whether it may guess")
     }
 
     /// The classifier keys on the credential that went out, and a family with

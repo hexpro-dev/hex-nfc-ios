@@ -8,13 +8,17 @@ tags:
 ---
 
 A tag holds a list of records, and each record has a type. Scan a tag with your
-iPhone, or tap **Build** on the Hex NFC home screen to start an empty one. Then
+iPhone, or tap **Build** on the Hex NFC home screen to start with no records. Then
 tap **Add record** on the Tag screen. The app offers 13 types, which [Edit a
 tag's records](edit-records.md) walks through. The type you pick fixes which
 fields the record editor shows you, and it fixes what another phone finds when
 it reads the tag later. A tag you scan can also hold five types the app opens
 but does not offer to add, covered in [Types you can open but not
 add](#types-you-can-open-but-not-add).
+
+:::figure[**Add record** offers 13 record types, with **Scan QR** first for turning a QR code into a record.]
+![The Add record screen, with Close at the top. A Scan QR tile comes first, then 13 type tiles running from Text, URL and Social to Location, Crypto and Wi-Fi.](../../../assets/add-record--grid.png)
+:::
 
 ## What the type changes
 
@@ -110,12 +114,16 @@ whichever one describes where your link came from. The app never reads where
 your iPhone is. Every location is one you type or paste, or one that arrives
 from a QR code or a tag you scanned.
 
+:::figure[With **Source** set to **Coordinates**, the form shows **Latitude** and **Longitude**, each holding a grey sample until you type.]
+![The Location record editor with Cancel and Save at the top. Source reads Coordinates, and the empty Latitude and Longitude fields show -33.8688 and 151.2093 as hints.](../../../assets/record-editor--location-coordinates.png)
+:::
+
 A **Location** record needs both a latitude and a longitude, or a map URL. Until
 it has one, the form reads "Enter a latitude and a longitude, or a map URL.
 Until then, this record cannot be written to a tag." and the record's row on the
 Tag screen reads "No location". A **Location** you add and then leave with
 **Cancel** stays in the list in that state. Writing the tag while the list holds
-one stops before the NFC sheet opens, with "A location record is missing its
+one stops before the iOS scan sheet opens, with "A location record is missing its
 coordinates or map URL. Nothing was written to the tag." Fill the record in or
 delete it, then write again. **Save as preset…** holds back in the same way: while
 the list holds such a record, **Save** stays dimmed and the save sheet says why.
@@ -141,7 +149,7 @@ Every phone that reads the tag reads the network password with it. Put a
 **Wi-Fi** record only on a tag you are content for anyone to read.
 :::
 
-## Types you can open but not add
+## Types you can open but not add {#types-you-can-open-but-not-add}
 
 A scanned tag, a preset or a history entry can hold five types that **Add
 record** does not offer: **App link**, **Bluetooth**, **Data**, **Shortcut** and

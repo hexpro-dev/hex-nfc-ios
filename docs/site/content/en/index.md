@@ -1,6 +1,6 @@
 ---
 title: Hex NFC documentation
-description: Start here for the Hex NFC user guide, the engineering documents, and the app's legal pages and security contact.
+description: Start here for the Hex NFC user guide, the engineering documents, where to get help, and the app's legal pages and security contact.
 audience: both
 ---
 
@@ -28,6 +28,24 @@ Each tag family has its own table. The FeliCa table covers reading and writing
 only; the others add password protection, permanent lock and memory dump. The
 page says which of those results have been confirmed on real tags and which
 have not.
+
+## Get help {#get-help}
+
+When a tag will not scan or write,
+[If a tag does not scan or write](guide/troubleshooting.md) goes through each
+message the app shows and what to do about it.
+[Common questions](guide/faq.md) covers what the app costs and which iPhones
+it runs on.
+
+In the app, tap the gear button on the home screen, then **Send Feedback**.
+The message goes straight to Hex Pro, and the form lists what goes with it (app
+version, iOS version, device model and language) before you send. You can also
+email [support@hex.pro](mailto:support@hex.pro) or use the
+[contact form on hex.pro](https://hex.pro/contact?topic=support). Bug reports
+and requests for a new chip are welcome as
+[issues on GitHub](https://github.com/hexpro-dev/hex-nfc-ios/issues), and the
+[help page](https://apps.hex.pro/hex-nfc/support) gathers every way to reach
+Hex Pro.
 
 ## Privacy policy and terms
 

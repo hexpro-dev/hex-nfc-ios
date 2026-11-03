@@ -5,9 +5,11 @@ import SwiftUI
 /// while the read is in flight (iOS's NFC card is only a partial bottom sheet,
 /// so the app stays visible behind it and the reveal builds live during the scan).
 ///
-/// A field of bright rainbow lines climbs from the bottom of the screen; as the
-/// leading front passes ~60% of the way up it diverges into concentric circles
-/// that ring the Hex logo (`hexPassportReveal`). The field brightens as the read
+/// A field of bright rainbow lines sweeps up from the bottom of the screen to the
+/// halfway line the moment the read starts, so it clears iOS's NFC card at once,
+/// then spends the read climbing from there to the logo line ~60% of the way up,
+/// where it diverges into concentric circles that ring the Hex logo
+/// (`hexPassportReveal`). The field brightens as the read
 /// nears completion (it follows the reader's live `progress`), flares in a
 /// white-hot burst when the read lands, then slides down and fades, the same
 /// recede feel as the scan-success sweep grid. The Hex logo is drawn at the ring
@@ -30,6 +32,19 @@ public extension View {
     func hexPassportReveal(progress: Double, finished: Bool, isActive: Bool) -> some View {
         modifier(HexPassportRevealModifier(progress: progress, finished: finished, isActive: isActive))
     }
+}
+
+/// Screen lines the clock and the field share, as fractions of the overlay's
+/// height measured from the top.
+private enum HexPassportRevealLayout {
+    /// Divergence / ring centre, ~60% of the way up the screen (above iOS's card).
+    static let logoLine = 0.40
+    /// Where the front opens the read: halfway up the screen. iOS's NFC card hides
+    /// roughly the lower 40%, so a front that started at the bottom edge stayed
+    /// out of sight for the first two thirds of the read.
+    static let openingLine = 0.50
+    /// `openingLine` as a shader `front` (0 = bottom edge, 1 = logo line).
+    static let openingFront = (1 - openingLine) / (1 - logoLine)
 }
 
 /// Per-frame shader inputs, produced by `HexPassportRevealClock`.
@@ -106,6 +121,7 @@ private final class HexPassportRevealClock {
     private var startTime: Double = 0
     private var lastTick: Double = 0
     private var displayed: Double = 0
+    private var front: Double = 0
     private var finishTime: Double?
 
     /// Fixed tail after the read lands.
@@ -117,6 +133,7 @@ private final class HexPassportRevealClock {
     func reset() {
         started = false
         displayed = 0
+        front = 0
         finishTime = nil
     }
 
@@ -128,6 +145,7 @@ private final class HexPassportRevealClock {
             startTime = now
             lastTick = now
             displayed = clampedTarget // begin at the current progress, not a jump from 0
+            front = 0 // but sweep the front up from the bottom edge
         }
         // Clamp dt so a stalled frame (e.g. the NFC card animating in) doesn't
         // snap the build forward.
@@ -139,6 +157,14 @@ private final class HexPassportRevealClock {
         let goal = finished ? 1.0 : clampedTarget
         let follow = 1 - exp(-dt / 0.18)
         displayed = min(max(displayed + (goal - displayed) * follow, 0), 1)
+
+        // The front's goal starts at the opening line, so the first frames sweep
+        // it up there, and the read then carries it the rest of the way to the
+        // logo line. Same follow as `displayed`, so once the sweep has settled
+        // the front tracks progress exactly.
+        let opening = HexPassportRevealLayout.openingFront
+        let frontGoal = opening + (1 - opening) * goal
+        front = min(max(front + (frontGoal - front) * follow, 0), 1)
 
         var values = HexPassportRevealValues()
         values.flow = (now - startTime) * 0.16 // continuous hue + ring expansion
@@ -156,7 +182,7 @@ private final class HexPassportRevealClock {
             values.recede = recede
             values.intensity = displayed * (1.0 - recede)
         } else {
-            values.front = displayed
+            values.front = front
             values.intensity = displayed
         }
         return values
@@ -172,7 +198,7 @@ private struct HexPassportRevealField: View {
 
     /// Divergence / ring centre, ~60% of the way up the screen (above iOS's card).
     private var logoY: CGFloat {
-        size.height * 0.40
+        size.height * HexPassportRevealLayout.logoLine
     }
 
     var body: some View {

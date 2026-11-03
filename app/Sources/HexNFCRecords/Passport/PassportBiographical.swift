@@ -22,7 +22,7 @@ public struct PassportBiographical: Hashable, Sendable, Codable {
     public var profession: String?
     /// Title (`0x5F14`).
     public var title: String?
-    /// Other names (`0x5F15`).
+    /// Other names (`0x5F0F`).
     public var otherNames: [String]
 
     /// --- DG12: additional document detail ---

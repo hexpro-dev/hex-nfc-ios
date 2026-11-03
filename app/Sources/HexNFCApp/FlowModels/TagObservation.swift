@@ -51,6 +51,10 @@ public struct TagObservation: Hashable, Sendable {
     /// had been erased, and pressing Write would have put it back, because
     /// `dataAreaChange` is built from the same list.
     public let records: [NDEFRecord]?
+    /// Whether the card hosts an NDEF application a reader can write, read off
+    /// the card. Only a chip whose NDEF support belongs to the card publishes
+    /// it: Format and Remove NDEF setup on a DESFire, which change exactly that.
+    public let ndefAccess: NDEFAccess?
 
     public init(
         uid: Data,
@@ -58,9 +62,11 @@ public struct TagObservation: Hashable, Sendable {
         lock: TagLockReading? = nil,
         formatted: Bool? = nil,
         ndefReadable: Bool? = nil,
-        records: [NDEFRecord]? = nil
+        records: [NDEFRecord]? = nil,
+        ndefAccess: NDEFAccess? = nil
     ) {
         self.uid = uid
+        self.ndefAccess = ndefAccess
         self.protection = protection
         self.lock = lock
         self.formatted = formatted
@@ -71,7 +77,7 @@ public struct TagObservation: Hashable, Sendable {
     /// `true` when there is nothing here worth delivering.
     public var isEmpty: Bool {
         protection == nil && lock == nil && formatted == nil && ndefReadable == nil
-            && records == nil
+            && records == nil && ndefAccess == nil
     }
 
     /// Fold a later reading into this one, field by field.
@@ -93,7 +99,8 @@ public struct TagObservation: Hashable, Sendable {
             lock: later.lock ?? lock,
             formatted: later.formatted ?? formatted,
             ndefReadable: later.ndefReadable ?? ndefReadable,
-            records: later.records ?? records
+            records: later.records ?? records,
+            ndefAccess: later.ndefAccess ?? ndefAccess
         )
     }
 }

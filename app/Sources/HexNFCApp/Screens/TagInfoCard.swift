@@ -47,8 +47,7 @@ struct TagInfoCard: View {
                             .foregroundStyle(HexTokens.Color.textSecondary)
                         Spacer(minLength: HexTokens.Spacing.s)
                         Label(
-                            tag.formatState == .noCapabilityContainer
-                                ? "Not formatted" : "Data won't read",
+                            Self.statusTitle(tag.formatState),
                             systemImage: "exclamationmark.triangle.fill"
                         )
                         .font(HexTokens.Font.body)
@@ -106,7 +105,7 @@ struct TagInfoCard: View {
     /// SLIX, where the whole user memory is the NDEF area).
     static func formatMemory(ndef: Int?, total: Int) -> String {
         if let ndef, ndef > 0, ndef < total {
-            return "\(ndef) Bytes (\(total)B Total)"
+            return String(localized: "\(ndef) Bytes (\(total)B Total)")
         }
         return formatBytes(total)
     }
@@ -115,9 +114,9 @@ struct TagInfoCard: View {
     /// otherwise raw bytes (e.g. 888 → "888 Bytes").
     static func formatBytes(_ bytes: Int) -> String {
         if bytes >= 1024, bytes % 1024 == 0 {
-            return "\(bytes / 1024) KB"
+            return String(localized: "\(bytes / 1024) KB")
         }
-        return "\(bytes) Bytes"
+        return String(localized: "\(bytes) Bytes")
     }
 
     /// The chip's read-only self-report. Each row renders only when that chip
@@ -209,6 +208,15 @@ struct TagInfoCard: View {
     /// Grouped digits, so a six-figure tap count stays readable.
     static func formatCount(_ value: Int) -> String {
         value.formatted(.number.grouping(.automatic))
+    }
+
+    /// The Status row's words. Each fault names the one repair that fits it.
+    private static func statusTitle(_ state: TagFormatState) -> LocalizedStringKey {
+        switch state {
+        case .noCapabilityContainer: "Not formatted"
+        case .noNDEFApplication: "Not set up for NDEF"
+        default: "Data won't read"
+        }
     }
 
     private func infoRow(_ label: LocalizedStringKey, _ value: String, mono: Bool = false) -> some View {

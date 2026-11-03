@@ -1,6 +1,6 @@
 ---
 title: Common questions
-description: Answers about what Hex NFC costs, which iPhones it needs and what happens to the tags you scan.
+description: Answers about what Hex NFC costs, which iPhones it needs, what happens to the tags you scan, and how to get help.
 audience: user
 pageKind: faq
 navTitle: FAQ
@@ -10,7 +10,7 @@ tags:
 
 The other guide pages walk through each task. This page answers what comes up
 around them: what the app costs and what it asks of your iPhone. It also
-answers where a tag goes after you scan it.
+answers what happens to the tags you scan, and how to reach Hex Pro.
 
 ## What it costs
 
@@ -49,11 +49,11 @@ instead of looking for a tag.
 ### Do I need an internet connection?
 
 No. Reading a tag, writing one and protecting one all happen between your
-iPhone and the tag. The app reaches Hex Pro for three things. Two are the
-development-costs figure and the card for another Hex Pro app. The third is a
-station name you choose to send from a transit card. iCloud sync is the fourth
-use of the network, and it stays off until you turn it on. See
-[Privacy and your data](privacy.md).
+iPhone and the tag. The app reaches Hex Pro for four things. Two are the
+development-costs figure and the card for another Hex Pro app. The other two go
+out only when you send them: a station name from a transit card, and a feedback
+message. iCloud sync is the fifth use of the network, and it stays off until
+you turn it on. See [Privacy and your data](privacy.md).
 
 ### Why will my iPhone not read one of my tags?
 
@@ -96,6 +96,23 @@ No, and nothing else can either. The tag itself checks the password, so
 protected memory on a tag whose password is lost is irrecoverable. A password
 you set is kept in the Keychain of the iPhone that set it. On a second iPhone,
 the same tag asks you to enter it. See [Tag protection](tag-protection.md).
+
+### Can Hex NFC read my insulin pen? {#insulin-pen}
+
+It can tell you what the pen is, but not what it holds. A NovoPen 6 or NovoPen
+Echo Plus opens a **Health device** screen that names an app able to read its
+dose history. Hex NFC never writes to a health device and saves nothing from
+one. See [Health devices](tags-that-work.md#health-devices).
+
+## Getting help {#getting-help}
+
+### How do I report a problem or ask a question? {#report-a-problem}
+
+In Hex NFC, tap the gear button on the home screen, then **Send Feedback**. The
+message goes straight to Hex Pro with the app version, iOS version, device
+model and language, and the form lists those before you send. Add your email
+address under **Reply address (optional)** if you want an answer. You can also
+email support@hex.pro.
 
 If a scan or a write fails, work through the message you saw in
 [If a tag does not scan or write](troubleshooting.md).

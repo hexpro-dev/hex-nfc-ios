@@ -52,6 +52,11 @@ public final class ScanFlowModel {
     /// the result view and dropped on `reset()` — never persisted anywhere.
     public private(set) var passportData: PassportData?
 
+    /// Set when the tag is a personal health device (an insulin pen, a meter).
+    /// The scan routes to the read-only health device view. **Session-only**,
+    /// like `passportData`: never persisted.
+    public private(set) var healthDevice: HealthDeviceScan?
+
     /// Live progress (0...1) of the in-flight passport read, driven by the
     /// reader's stage callbacks. The scan screen's unlock reveal follows this so
     /// the shader builds *during* the read (behind iOS's NFC card) and bursts as
@@ -66,6 +71,16 @@ public final class ScanFlowModel {
     /// `true` when the last passport read attempt failed (wrong details / read
     /// error), so the prompt can say "couldn't read — check the details".
     public private(set) var passportReadFailed = false
+
+    /// Whether that failure was the passport refusing the key, rather than,
+    /// say, the passport moving away mid-read. The prompt moves a camera
+    /// capture on to its next alternate only for a refusal.
+    ///
+    /// Not exact on PACE: `EPassportReader` reports every PACE failure as
+    /// `.authFailed`, a lost tag included, so a slip mid-handshake also counts.
+    /// The cost is one alternate tried early; the prompt cycles back to the
+    /// first reading after the last.
+    public private(set) var passportFailureWasRefusal = false
 
     /// What the scan established about the tag's NDEF structure, and which
     /// repair that calls for.
@@ -217,18 +232,28 @@ public final class ScanFlowModel {
 
     private let factory: TagSessionFactory
     private let library: LibraryRepository?
+    /// Told how each scan ended, for the review prompt. See `activity(for:)`.
+    private let activity: TagActivityRecording?
     private var currentSession: TagSession?
     /// Whether any session of this scan has had a tag. Survives `reset()` and
     /// the unlock and passport re-taps on purpose: once a tag has been in play,
     /// a cancel or a timeout is reported as it always has been.
     private var contact = TagContact()
 
-    public init(factory: TagSessionFactory, library: LibraryRepository? = nil) {
+    public init(
+        factory: TagSessionFactory,
+        library: LibraryRepository? = nil,
+        activity: TagActivityRecording? = nil
+    ) {
         self.factory = factory
         self.library = library
+        self.activity = activity
     }
 
     public func begin(alert: String = NFCPrompt.holdTag) async {
+        // Load-bearing beyond the obvious: the passport camera is a full-screen
+        // cover over `ScanSheet`, which hides the sheet and reruns its `.task`
+        // on the way back. This guard is what makes that rerun a no-op.
         guard case .idle = phase else { return }
         let session = factory.makeSession()
         currentSession = session
@@ -299,6 +324,11 @@ public final class ScanFlowModel {
                         creepTask.cancel()
                         passportReadProgress = 0
                         passportReadFailed = true
+                        if let tagError = error as? TagError, case .authFailed = tagError.kind {
+                            passportFailureWasRefusal = true
+                        } else {
+                            passportFailureWasRefusal = false
+                        }
                         await session.invalidate(error: nil)
                         currentSession = nil
                         transition(to: .needsPassportKey)
@@ -322,6 +352,23 @@ public final class ScanFlowModel {
                 transitCard = card
                 records = []
                 persistScan(tag, records: [], transitCard: card)
+                transition(to: .ready)
+                await session.invalidate(error: nil)
+                currentSession = nil
+                return
+            }
+
+            // A personal health device was identified from the association
+            // request it opened with, and that is all this tap reads. Nothing
+            // below runs against it: its NDEF file is the device's live
+            // IEEE 11073 exchange rather than stored content, and the protection,
+            // lock and diagnostics probes are frames it has no use for.
+            //
+            // Not persisted, like a passport. History would otherwise keep a
+            // row saying this person scanned an insulin pen.
+            if tag.capabilities.contains(.personalHealthDevice) {
+                healthDevice = HealthDeviceScan(association: tag.healthDevice)
+                records = []
                 transition(to: .ready)
                 await session.invalidate(error: nil)
                 currentSession = nil
@@ -489,6 +536,11 @@ public final class ScanFlowModel {
                 // datasheet CC for, so the UI only ever names a repair it could
                 // actually perform.
                 formatState = Self.formatState(for: tag, capabilityContainer: preread.capabilityContainer)
+                // A DESFire has no page 3. Whether Format has work to do on it
+                // is a question about its applications, so ask the card.
+                if tag.chip?.ndefDependsOnCard == true {
+                    formatState = await Self.desfireFormatState(for: tag)
+                }
                 // A blank or unformatted tag never halted: `queryNDEFStatus`
                 // answered cleanly with "not supported". So the config read is
                 // safe here, which is what keeps the editor reporting protection
@@ -585,6 +637,7 @@ public final class ScanFlowModel {
         guard case .needsPassportKey = phase else { return }
         passportKey = mrz
         passportReadFailed = false
+        passportFailureWasRefusal = false
         transition(to: .idle)
         await begin()
     }
@@ -596,9 +649,11 @@ public final class ScanFlowModel {
         records = []
         transitCard = nil
         passportData = nil
+        healthDevice = nil
         passportReadProgress = 0
         passportKey = nil
         passportReadFailed = false
+        passportFailureWasRefusal = false
         detectedProtection = nil
         detectedLock = .notRead
         provenReadablePage = nil
@@ -675,6 +730,39 @@ public final class ScanFlowModel {
     private func transition(to newPhase: Phase) {
         phase = newPhase
         transitionCount &+= 1
+        if let outcome = activity(for: newPhase) {
+            activity?.record(outcome)
+        }
+    }
+
+    /// How a phase counts toward the review prompt, or `nil` when it is not
+    /// the end of a scan. Read after the state that explains the phase has
+    /// been set, which every route into these phases already does.
+    ///
+    /// `.locked` and `.needsPassportKey` are prompts, not outcomes, until a
+    /// credential the user supplied has been tried: then a return to them is
+    /// that credential failing. A cancel and a timeout with no tag are the
+    /// user's own ending and are not counted either way.
+    func activity(for phase: Phase) -> TagActivity? {
+        switch phase {
+        case .ready:
+            if let passportData {
+                return passportData.isComplete ? .specialRead : .failed
+            }
+            return transitCard == nil ? .read : .specialRead
+
+        case .error:
+            return .failed
+
+        case .locked:
+            return unlockFailed || unlockRefusal != nil ? .failed : nil
+
+        case .needsPassportKey:
+            return passportReadFailed ? .failed : nil
+
+        case .idle, .polling, .connected, .reading, .cancelled, .noTagFound:
+            return nil
+        }
     }
 
     /// `true` when a protection backend exists for this chip: the single gate
@@ -749,9 +837,10 @@ public final class ScanFlowModel {
     /// The chip gate is narrow on purpose. Only Type-2 keeps its CC in a page we
     /// know the factory bytes for, and only then can the app offer a format that
     /// is safe to perform: page 3 is OTP, so suggesting one at a chip whose CC
-    /// we'd have to guess is worse than saying nothing. DESFire and FeliCa reach
-    /// the same catch and must not be labelled anything: they have no NDEF area
-    /// at all, which no amount of formatting changes.
+    /// we'd have to guess is worse than saying nothing. FeliCa reaches the same
+    /// catch and must not be labelled anything: it has no NDEF area at all,
+    /// which no amount of formatting changes. A DESFire is decided separately,
+    /// from its applications (`desfireFormatState(for:)`).
     ///
     /// The bytes gate is the one this used to be missing. Without page 3 there
     /// is no reading, and the honest answer is `.unknown` rather than the
@@ -761,6 +850,18 @@ public final class ScanFlowModel {
               chip.capabilities.contains(.formatCC), chip.factoryCC != nil
         else { return .unknown }
         return .afterRefusedNDEFRead(capabilityContainer: page3)
+    }
+
+    /// A DESFire whose NDEF read was refused, read from the card: Format has
+    /// work to do on a card with no applications, or with this app's own setup
+    /// left unfinished, and on nothing else. A transit card is `.unknown`, so
+    /// the scan never points its owner at an operation that would refuse it.
+    /// Read-only, and a card that will not answer the reading is `.unknown` too.
+    static func desfireFormatState(for tag: ConnectedTag) async -> TagFormatState {
+        guard tag.desfireNDEFDriver != nil, let state = try? await tag.readDESFireNDEFState() else {
+            return .unknown
+        }
+        return state.formatCanProceed ? .noNDEFApplication : .unknown
     }
 
     /// Read failures that, on a password-capable Type-2 chip, most plausibly

@@ -96,6 +96,7 @@ public enum HexHapticPattern: String, Sendable, CaseIterable {
     case copyTick = "copy.tick"
     case tapTick = "ui.tap"
     case commitThud = "ui.commit"
+    case mrzLock = "mrz.lock"
 
     public var fileName: String {
         rawValue
@@ -275,6 +276,23 @@ extension HexHapticPattern {
                     ],
                     relativeTime: 0.02,
                     duration: 0.14
+                ),
+            ]
+
+        case .mrzLock:
+            // A crisp click as the key snaps in, a deeper detent behind it, and
+            // a short settle.
+            [
+                transient(at: 0, intensity: 0.75, sharpness: 0.95),
+                transient(at: 0.07, intensity: 1.0, sharpness: 0.5),
+                CHHapticEvent(
+                    eventType: .hapticContinuous,
+                    parameters: [
+                        CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.3),
+                        CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.3),
+                    ],
+                    relativeTime: 0.08,
+                    duration: 0.22
                 ),
             ]
         }

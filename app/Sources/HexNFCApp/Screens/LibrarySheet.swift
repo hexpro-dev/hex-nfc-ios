@@ -68,12 +68,16 @@ struct LibrarySheet: View {
         // bar, which is what makes it announce "tab 1 of 2".
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isTabBar)
+        .animation(HexTokens.Motion.snappy, value: selectedTab)
     }
 
     private func tabButton(_ title: LocalizedStringKey, tab: Tab) -> some View {
         let isSelected = (tab == selectedTab)
         return Button {
-            withAnimation(HexTokens.Motion.snappy) { selectedTab = tab }
+            // Not `withAnimation`: that would cross-fade the two Lists, keeping
+            // the outgoing one mounted and frozen through the switch (see
+            // `PresetsList`). The bar animates its own underline instead.
+            selectedTab = tab
         } label: {
             VStack(spacing: HexTokens.Spacing.xs) {
                 Text(title)
@@ -103,51 +107,56 @@ private struct PresetsList: View {
     @State private var shareTarget: ShareItem?
 
     var body: some View {
-        Group {
+        // The List stays mounted when it empties and the empty state sits over
+        // it, rather than the two being swapped. Swapping a List out right after
+        // a swipe's Delete, under any animation, leaves it frozen on screen for
+        // whatever transition comes next to lay out, which is how 1.0.1 crashed
+        // on iOS 27 in the tag editor (2026-10-22).
+        List {
+            ForEach(presets) { preset in
+                PresetRow(preset: preset)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            delete(preset)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        Button {
+                            duplicate(preset)
+                        } label: {
+                            Label("Duplicate", systemImage: "plus.square.on.square")
+                        }
+                        .tint(HexTokens.Color.warning)
+                    }
+                    .swipeActions(edge: .leading) {
+                        Button {
+                            HexHeroMoment.commit.play()
+                            onWrite(preset)
+                        } label: {
+                            Label("Write", systemImage: "square.and.arrow.up")
+                        }
+                        .tint(HexTokens.Color.primaryLight)
+                        Button {
+                            share(preset)
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up.on.square")
+                        }
+                        .tint(HexTokens.Color.success)
+                    }
+                    .listRowBackground(HexTokens.Color.surface1)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(HexTokens.Color.surface0)
+        .accessibilityHidden(presets.isEmpty)
+        .overlay {
             if presets.isEmpty {
                 ContentUnavailableView(
                     "No saved presets",
                     systemImage: "tray",
                     description: Text("Save the records you're editing as a preset to find them here.")
                 )
-            } else {
-                List {
-                    ForEach(presets) { preset in
-                        PresetRow(preset: preset)
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    delete(preset)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                Button {
-                                    duplicate(preset)
-                                } label: {
-                                    Label("Duplicate", systemImage: "plus.square.on.square")
-                                }
-                                .tint(HexTokens.Color.warning)
-                            }
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    HexHeroMoment.commit.play()
-                                    onWrite(preset)
-                                } label: {
-                                    Label("Write", systemImage: "square.and.arrow.up")
-                                }
-                                .tint(HexTokens.Color.primaryLight)
-                                Button {
-                                    share(preset)
-                                } label: {
-                                    Label("Share", systemImage: "square.and.arrow.up.on.square")
-                                }
-                                .tint(HexTokens.Color.success)
-                            }
-                            .listRowBackground(HexTokens.Color.surface1)
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .background(HexTokens.Color.surface0)
             }
         }
         .task { reload() }
@@ -251,44 +260,46 @@ private struct HistoryList: View {
     @State private var entries: [HistoryEntry] = []
 
     var body: some View {
-        Group {
+        // Mounted when empty, with the empty state over it, for the reason
+        // `PresetsList` gives.
+        List {
+            ForEach(entries) { entry in
+                Button {
+                    onOpen(entry)
+                } label: {
+                    HistoryRow(entry: entry)
+                }
+                .hexPressStyle(.medium)
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        delete(entry)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+                .swipeActions(edge: .leading) {
+                    Button {
+                        togglePin(entry)
+                    } label: {
+                        Label(entry.pinned ? "Unpin" : "Pin",
+                              systemImage: entry.pinned ? "pin.slash" : "pin")
+                    }
+                    .tint(HexTokens.Color.warning)
+                }
+                .listRowBackground(HexTokens.Color.surface1)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(HexTokens.Color.surface0)
+        .accessibilityHidden(entries.isEmpty)
+        .overlay {
             if entries.isEmpty {
                 ContentUnavailableView(
                     "No scan history",
                     systemImage: "clock.arrow.circlepath",
                     description: Text("The last 50 tags you scan show up here. Pin one to keep it.")
                 )
-            } else {
-                List {
-                    ForEach(entries) { entry in
-                        Button {
-                            onOpen(entry)
-                        } label: {
-                            HistoryRow(entry: entry)
-                        }
-                        .hexPressStyle(.medium)
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                delete(entry)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                togglePin(entry)
-                            } label: {
-                                Label(entry.pinned ? "Unpin" : "Pin",
-                                      systemImage: entry.pinned ? "pin.slash" : "pin")
-                            }
-                            .tint(HexTokens.Color.warning)
-                        }
-                        .listRowBackground(HexTokens.Color.surface1)
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .background(HexTokens.Color.surface0)
             }
         }
         .task { reload() }
@@ -312,6 +323,13 @@ private struct HistoryList: View {
 private struct HistoryRow: View {
     let entry: HistoryEntry
 
+    /// A tag the app could not name is saved with the family "Unknown". That is
+    /// data, kept in English in the store and in exports, so the word is
+    /// translated here, where it is shown.
+    private var title: String {
+        entry.displayName == "Unknown" ? String(localized: "Unknown") : entry.displayName
+    }
+
     var body: some View {
         HStack(spacing: HexTokens.Spacing.m) {
             Image(systemName: entry.pinned ? "pin.fill" : "dot.radiowaves.left.and.right")
@@ -322,7 +340,7 @@ private struct HistoryRow: View {
                         .fill((entry.pinned ? HexTokens.Color.warning : HexTokens.Color.primary).opacity(0.16))
                 )
             VStack(alignment: .leading, spacing: HexTokens.Spacing.xs) {
-                Text(entry.displayName)
+                Text(title)
                     .font(HexTokens.Font.heading)
                     .foregroundStyle(HexTokens.Color.textPrimary)
                 Text("\(entry.displayUID) · \(entry.scannedAt.formatted(.relative(presentation: .named)))")

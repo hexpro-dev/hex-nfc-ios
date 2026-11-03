@@ -276,6 +276,9 @@ public final class WriteFlowModel {
     /// store is what stops that reappearing.
     private let credentials: TagCredentialLedger
 
+    /// Told how each write ended, for the review prompt.
+    private let activity: TagActivityRecording?
+
     public init(
         factory: TagSessionFactory,
         dataArea: DataAreaChange,
@@ -285,9 +288,11 @@ public final class WriteFlowModel {
         removeProtection: Bool = false,
         uidConfirmation: UIDConfirmation,
         targetUID: Data? = nil,
-        pinnedUID: Data? = nil
+        pinnedUID: Data? = nil,
+        activity: TagActivityRecording? = nil
     ) {
         self.factory = factory
+        self.activity = activity
         self.dataArea = dataArea
         self.credentials = TagCredentialLedger(credentials)
         self.protection = protection
@@ -934,5 +939,28 @@ public final class WriteFlowModel {
     private func transition(to newPhase: Phase) {
         phase = newPhase
         transitionCount &+= 1
+        if let outcome = activity(for: newPhase) {
+            activity?.record(outcome)
+        }
+    }
+
+    /// How a phase counts toward the review prompt, or `nil` when it is not
+    /// the end of a write. `.needsUnlock` is the first ask for a password until
+    /// one has been refused; after that it is the refusal.
+    func activity(for phase: Phase) -> TagActivity? {
+        switch phase {
+        case .done:
+            .changedTag
+
+        case .error:
+            .failed
+
+        case .needsUnlock:
+            unlockFailed || unlockRefusal != nil ? .failed : nil
+
+        case .ready, .identifying, .awaitingConfirmation, .polling, .writing, .verifying,
+             .applyingProtection, .removingProtection, .cancelled, .noTagFound:
+            nil
+        }
     }
 }

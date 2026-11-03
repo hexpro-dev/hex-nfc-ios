@@ -9,11 +9,28 @@ import Foundation
 /// how iOS chose to enumerate it — most often `.miFare`/`.unknown` (see
 /// `MiFareTagIdentifier`), but sometimes `.iso7816`. Either way its
 /// wrapped-APDU `GET_VERSION` (`90 60 00 00 00`) fingerprints it, so we probe
-/// for it here too. Other Type-4 silicon (DESFire generations, payment cards)
-/// can't be told apart over the air without an app-specific select, so they
-/// fall back to the generic command set.
+/// for it here too. The same probe names a DESFire EV1/EV2/EV3, which reaches
+/// this transport once it hosts the NDEF application and the app declares that
+/// AID. Other Type-4 silicon (payment cards and the like) can't be told apart
+/// over the air without an app-specific select, so it falls back to the generic
+/// command set.
+///
+/// A tag iOS delivered through the **NDEF application AID** takes its own
+/// route, `identifyNDEFApplication`. iOS SELECTs the declared AIDs in Info.plist
+/// order and stops at the first that answers, so `initialSelectedAID` says which
+/// one did. The eMRTD AID is listed first, which means a tag delivered on the
+/// NDEF AID has already refused it, and the passport probe is skipped.
 struct ISO7816TagIdentifier: Sendable {
-    func identify(_ tag: NFCISO7816Tag) async -> ChipProfile? {
+    struct Identification: Sendable {
+        var profile: ChipProfile?
+        var healthDevice: PHDAssociation?
+    }
+
+    /// NFC Forum NDEF Tag Application, version 2. Declared in Info.plist after
+    /// the eMRTD AID (`docs/internal/aid-rationale.md`).
+    static let ndefApplicationAID = "D2760000850101"
+
+    func identify(_ tag: NFCISO7816Tag) async -> Identification {
         // Trace the breadcrumbs (UID / historical bytes / selected AID) for any
         // Type-4 chip we don't yet fingerprint, rather than dropping it silently.
         NFCTrace.shared.note(
@@ -22,10 +39,13 @@ struct ISO7816TagIdentifier: Sendable {
                 + "aid=\(tag.initialSelectedAID)",
             label: "identify"
         )
+        if tag.initialSelectedAID.uppercased() == Self.ndefApplicationAID {
+            return await identifyNDEFApplication(tag)
+        }
         if let version = try? await getVersionAPDU(tag),
            let profile = ChipCatalog.identify(type4Version: version)
         {
-            return profile
+            return Identification(profile: profile)
         }
         // Not an NTAG424 — probe for an electronic passport by SELECTing the
         // eMRTD LDS1 application. A tag that accepts the AID is an ePassport;
@@ -33,9 +53,89 @@ struct ISO7816TagIdentifier: Sendable {
         if let sw = try? await selectEMRTD(tag),
            let profile = ChipCatalog.identify(eMRTDSelectStatus: sw)
         {
-            return profile
+            return Identification(profile: profile)
         }
-        return nil
+        return Identification(profile: nil)
+    }
+
+    /// A Type 4 tag reached through the NDEF application, which iOS has already
+    /// selected.
+    ///
+    /// **The NDEF probe runs before anything else is sent.** If this is a
+    /// personal health device, the first frames it receives should be the
+    /// plain SELECTs and READs any Type 4 reader sends, not a wrapped DESFire
+    /// command it has no reason to understand. Only a tag that turns out not to
+    /// be one is asked for `GET_VERSION`, which is how an NTAG424 delivered on
+    /// this transport is still recognised.
+    private func identifyNDEFApplication(_ tag: NFCISO7816Tag) async -> Identification {
+        let outcome = await probeNDEF(tag)
+        if let healthDevice = healthDevice(from: outcome) {
+            return healthDevice
+        }
+        if case .unreadable(let reason) = outcome {
+            NFCTrace.shared.note("NDEF probe: \(reason)", label: "identify")
+        }
+        if let version = try? await getVersionAPDU(tag),
+           let profile = ChipCatalog.identify(type4Version: version)
+        {
+            return Identification(profile: profile)
+        }
+        // An NDEF application that answered but whose file did not read is
+        // still a Type 4 tag. CoreNFC's own NDEF read gets the final say.
+        return Identification(profile: ChipCatalog.profile(for: .genericType4))
+    }
+
+    /// The health device check alone, for a session that skips identification
+    /// (the Advanced console's toggle, which sets it on the app-wide factory).
+    ///
+    /// The skip exists to keep `GET_VERSION` off chips that halt on it. This
+    /// check sends only SELECT and READ BINARY, which halt nothing, so it runs
+    /// regardless: without it a pen is handed up unidentified, and an
+    /// unidentified tag gets the generic command set, writes included. `nil`
+    /// for anything that is not a health device, which stays unidentified as
+    /// the skip asked.
+    func identifyHealthDeviceOnly(_ tag: NFCISO7816Tag) async -> Identification? {
+        guard tag.initialSelectedAID.uppercased() == Self.ndefApplicationAID else { return nil }
+        return await healthDevice(from: probeNDEF(tag))
+    }
+
+    private func probeNDEF(_ tag: NFCISO7816Tag) async -> Type4NDEFProbe.Outcome {
+        await Type4NDEFProbe { command, label in
+            try await sendAPDU(tag, command, label: label)
+        }.probe()
+    }
+
+    private func healthDevice(from outcome: Type4NDEFProbe.Outcome) -> Identification? {
+        guard case .personalHealthDevice = outcome,
+              let (profile, association) = ChipCatalog.identify(type4Probe: outcome)
+        else { return nil }
+        NFCTrace.shared.note(
+            "PHDC device maker=\(association?.maker?.name ?? "unknown") "
+                + "systemID=\(association?.systemID.hexString ?? "-")",
+            label: "identify"
+        )
+        return Identification(profile: profile, healthDevice: association)
+    }
+
+    /// Sends one plain ISO 7816 command and returns `data || SW1 || SW2`, with
+    /// tx/rx trace logging.
+    private func sendAPDU(_ tag: NFCISO7816Tag, _ command: Data, label: String) async throws -> Data {
+        guard let apdu = NFCISO7816APDU(data: command) else {
+            throw TagError.protocolError("invalid APDU bytes", diagnostics: command.hexString)
+        }
+        NFCTrace.shared.tx(label, command)
+        return try await withCheckedThrowingContinuation { continuation in
+            tag.sendCommand(apdu: apdu) { data, sw1, sw2, error in
+                if let error {
+                    NFCTrace.shared.failure(error.localizedDescription, label: label)
+                    continuation.resume(throwing: error)
+                } else {
+                    let response = data + Data([sw1, sw2])
+                    NFCTrace.shared.rx(label, response)
+                    continuation.resume(returning: response)
+                }
+            }
+        }
     }
 
     /// SELECT the eMRTD application (AID `A0000002471001`) and return its status

@@ -30,16 +30,23 @@ public final class AppModel {
     /// that is on and doing nothing.
     public let storeFallback: SwiftDataStack.Fallback
 
+    /// When to ask "Loving Hex NFC?", counted from the sessions every flow
+    /// reports. Disabled unless the app target says otherwise, so a model
+    /// built in a test never touches the real store.
+    public let reviewPrompt: ReviewPromptModel
+
     public init(
         sessionFactory: TagSessionFactory,
         library: LibraryRepository,
         settings: AppSettings = AppSettings(),
-        storeFallback: SwiftDataStack.Fallback = .none
+        storeFallback: SwiftDataStack.Fallback = .none,
+        reviewPrompt: ReviewPromptModel? = nil
     ) {
         self.sessionFactory = sessionFactory
         self.library = library
         self.settings = settings
         self.storeFallback = storeFallback
+        self.reviewPrompt = reviewPrompt ?? ReviewPromptModel(mode: .disabled)
     }
 }
 
